@@ -45,7 +45,6 @@ def build_stock_data_from_repo_request(filters=None):
             return invalid_req
 
         for key, value in filters.items():
-            print('TEST', key, value)
             if key not in accepted_filters:
                 invalid_req.add_error(
                     "filters", "Key {} cannot be used".format(key)

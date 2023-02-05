@@ -6,10 +6,11 @@ from backtest.request.stockdata_from_repo import build_stock_data_from_repo_requ
 from backtest.domains.strategy import Strategy, StrategyType
 from backtest.use_cases.strategy_execute import strategy_execute
 
-request = build_stock_data_from_repo_request(filters={'order__eq': 'btc'})
+request = build_stock_data_from_repo_request(
+    filters={'order__eq': 'btc', 'from__eq': '2018-01-01'})
 response = stockdata_from_repo(BithumbRepo(), request=request)
 stockdata = response.value
 strategy = Strategy(name='basic_strategy',
-                    type=StrategyType.with_stockdata, data=stockdata.data)
+                    type=StrategyType.with_stockdata, data=stockdata)
 
 strategy_result = strategy_execute(strategy=strategy)

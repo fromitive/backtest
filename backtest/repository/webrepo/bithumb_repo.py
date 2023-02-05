@@ -1,6 +1,7 @@
 import requests
 import pandas as pd
 import time
+from datetime import datetime, timedelta
 from backtest.domains.stockdata import StockData
 
 
@@ -38,10 +39,14 @@ class BithumbRepo:
                                     'high', 'low', 'volume'])
             temp_df['date'] = temp_df['time'].apply(
                 lambda x: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x/1000)))
+            temp_df.set_index('date', inplace=True)
+            temp_df.sort_index(ascending=True, inplace=True)
+            temp_df['date'] = temp_df.index
             if self.from_date:
                 temp_df = temp_df.loc[self.from_date:]
             if self.to_date:
                 temp_df = temp_df.loc[:self.to_date]
+
             return StockData.from_dict(temp_df.to_dict('list'))
         else:
             raise Exception('request error', response.status_code)
