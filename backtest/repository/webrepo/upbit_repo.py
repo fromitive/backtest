@@ -35,19 +35,26 @@ class UpbitRepo:
             chart_intervals=self.chart_intervals,
             to_date=self.to_date)
         temp_list = []
+        before_date = ""
         while True:
+
             response = requests.get(request_url, headers=self.API_HEADERS)
             if response.status_code == 200:
                 result_list = response.json()  # list
+                if result_list == []:
+                    break
                 data_last_date = datetime.strptime(
                     result_list[-1]['candle_date_time_kst'], '%Y-%m-%dT%H:%M:%S').replace(hour=0, minute=0, second=0, microsecond=0)
+                print(before_date, data_last_date)
+                if before_date != '' and data_last_date == before_date:
+                    break
             else:
                 raise Exception('request error', response.status_code)
             if self.from_date == '':
                 temp_list += result_list
                 break
             elif self.from_date < data_last_date:
-                data_last_date = data_last_date
+                before_date = data_last_date
                 data_last_date = data_last_date.strftime('%Y-%m-%dT%H:%M:%S')
                 request_url = self.API_URL.format(
                     order_currency=self.order_currency,
@@ -60,8 +67,8 @@ class UpbitRepo:
                 while result_list[0] != result_list[idx]:
                     compare_date = datetime.strptime(
                         result_list[idx]['candle_date_time_kst'], '%Y-%m-%dT%H:%M:%S').replace(hour=0, minute=0, second=0, microsecond=0)
-                    if compare_date >= self.from_date:
-                        result_list = result_list[:idx+1]
+                    if compare_date == self.from_date:
+                        result_list = result_list[:idx]
                         flag = True
                         break
                     idx -= 1

@@ -51,20 +51,26 @@ class BinanceRepo:
             del request_params['endTime']
 
         temp_list = []
+        before_date = ""
         while True:
             response = requests.get(
                 self.API_URL, headers=self.API_HEADERS, params=request_params)
             if response.status_code == 200:
                 result_list = response.json()
+                if result_list == []:
+                    break
                 data_last_date = datetime.fromtimestamp(
                     int(result_list[0][0]) / 1000).replace(hour=0, minute=0, second=0, microsecond=0)
                 print(data_last_date.strftime("%Y-%m-%d"))
+                if before_date != "" and data_last_date == before_date:
+                    break
             else:
                 raise Exception('request error', response.status_code)
             if self.from_date == '':
                 temp_list += result_list
                 break
             elif self.from_date < data_last_date:
+                before_date = data_last_date
                 data_last_date = data_last_date + timedelta(days=1)
                 data_last_date = int(data_last_date.timestamp() * 1000)
                 request_params['endTime'] = data_last_date
