@@ -13,11 +13,12 @@ class StrategyResultColumnType(Enum):
 class StrategyResult:
     value: pd.DataFrame = pd.DataFrame(
         columns=[''], index=pd.DatetimeIndex([]))
+    target: str = 'ALL'
 
     @classmethod
-    def from_dict(cls, adict):
+    def from_dict(cls, adict, target='ALL'):
         df = pd.DataFrame(adict,
                           columns=[item for item in adict.keys()])
         df.set_index('date', inplace=True)
         df.index = pd.to_datetime(df.index)
-        return cls(value=df)
+        return cls(value=df, target=target)
