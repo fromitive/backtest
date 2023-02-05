@@ -1,5 +1,6 @@
 import dataclasses
 import pandas as pd
+from datetime import datetime
 
 
 @dataclasses.dataclass
@@ -13,8 +14,9 @@ class StockData:
     def from_dict(cls, dict_data, symbol=''):
         df = pd.DataFrame(dict_data, columns=['open', 'high', 'low', 'close',
                                               'volume', 'date'])
+        df.drop_duplicates(inplace=True)
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index)
+        df.index = pd.to_datetime(df.index).normalize()
         df = df.astype({'open': 'float',
                         'high': 'float',
                         'close': 'float',
