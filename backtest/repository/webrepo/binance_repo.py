@@ -100,4 +100,4 @@ class BinanceRepo:
             lambda x: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x/1000)))
         usecols = ['date', 'open', 'high', 'low', 'close', 'volume']
         temp_df = temp_df[usecols]
-        return StockData.from_dict(temp_df.to_dict('list'))
+        return StockData.from_dict(temp_df.to_dict('list'), symbol=self.order_currency)

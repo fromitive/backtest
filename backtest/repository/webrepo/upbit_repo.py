@@ -86,4 +86,4 @@ class UpbitRepo:
             'candle_date_time_kst', 'opening_price', 'high_price', 'low_price', 'trade_price', 'candle_acc_trade_volume'])
         temp_df.rename(columns={'opening_price': 'open', 'high_price': 'high',
                                 'low_price': 'low', 'trade_price': 'close', 'candle_date_time_kst': 'date', 'candle_acc_trade_volume': 'volume'}, inplace=True)
-        return StockData.from_dict(temp_df.to_dict('list'))
+        return StockData.from_dict(temp_df.to_dict('list'), self.order_currency)

@@ -47,6 +47,6 @@ class BithumbRepo:
             if self.to_date:
                 temp_df = temp_df.loc[:self.to_date]
 
-            return StockData.from_dict(temp_df.to_dict('list'))
+            return StockData.from_dict(temp_df.to_dict('list'), self.order_currency)
         else:
             raise Exception('request error', response.status_code)
