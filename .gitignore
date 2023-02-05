@@ -1,5 +1,5 @@
 *.pyc
-*.ipynb
 env
 .pytest_cache
 __pycache__
+.ipynb_checkpoints
