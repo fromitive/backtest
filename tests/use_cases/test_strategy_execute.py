@@ -25,7 +25,7 @@ def sample_strategy_with_type(sample_stock_data):
 @pytest.fixture(scope='function')
 def sample_strategy_result(sample_strategy):
     strategy_result = StrategyResult(value=pd.DataFrame(
-        index=sample_strategy.data.index, columns=[sample_strategy.name]))
+        index=sample_strategy.data.index, columns=[sample_strategy.name]), target=sample_strategy.target)
     strategy_result.value[sample_strategy.name] = StrategyResultColumnType.KEEP
     return strategy_result
 
@@ -56,6 +56,7 @@ def test_strategy_execute_with_parameters(sample_strategy_with_type, sample_stra
     strategy_function.assert_called_with(strategy=sample_strategy_with_type)
     assert bool(response) == True
     assert sample_strategy_with_type.name in response.value.value.columns
+    assert response.value.target == 'ALL'
     assert len(response.value.value.columns) == 1
     assert len(
         response.value.value[sample_strategy_with_type.name].iloc[0]) == 2
