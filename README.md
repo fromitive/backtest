@@ -1,6 +1,8 @@
 # installation
 
 ```
+git clone https://github.com/fromitive/backtest.git
+cd backtest
 pip install -r requirements/prod.txt # production mode
 pip install -r requirements/test.txt # test mode
 pip install -r requirements/dev.txt # development mode
@@ -11,6 +13,8 @@ pip install -r requirements/dev.txt # development mode
 1. install test mode
 
 ```
+git clone https://github.com/fromitive/backtest.git
+cd backtest
 pip install -r requirements/test.txt
 ```
 
