@@ -2,6 +2,8 @@ from enum import Enum
 import dataclasses
 import pandas as pd
 from backtest.domains.stockdata import StockData
+from backtest.domains.strategy_function import StrategyFunction
+import typing
 
 
 class StrategyType(Enum):
@@ -16,15 +18,15 @@ class StrategyType(Enum):
 class Strategy:
     name: str = ''
     type: StrategyType = StrategyType.no_type
-    data: pd.DataFrame = pd.DataFrame(index=pd.DatetimeIndex([]))
+    data: typing.List[StockData] = dataclasses.field(default_factory=list)
+    function : StrategyFunction = None
     weight: int = 0
-    subdata: pd.DataFrame = pd.DataFrame(index=pd.DatetimeIndex([]))
     target: str = 'ALL'
+    options: dict = dataclasses.field(default_factory=dict)
 
     def __post_init__(self):
         if isinstance(self.data, StockData):
-            self.target = self.data.symbol
-            self.data = self.data.data
+            self.data = [self.data]
 
     def __len__(self):
         return len(self.data)
