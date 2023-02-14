@@ -38,6 +38,7 @@ def test_init_strategy_result_with_parameter(strategy_result_data_frame):
     assert isinstance(strategy_result.value.index, pd.DatetimeIndex)
     assert strategy_result.value.columns == ['name']
     assert strategy_result.target == 'ALL'
+    assert len(strategy_result) == 4
     assert len(strategy_result.value['name'].iloc[0]) == 2
 
 
@@ -48,12 +49,14 @@ def test_init_strategy_result_with_parameter(strategy_result_data_frame):
     assert isinstance(strategy_result.value.index, pd.DatetimeIndex)
     assert strategy_result.value.columns == ['name']
     assert strategy_result.target == 'TEST'
+    assert len(strategy_result) == 4
     assert len(strategy_result.value['name'].iloc[0]) == 2
 
 
 def test_init_strategy_result_from_dict(dict_strategy_result):
     strategy_result = StrategyResult.from_dict(
         dict_strategy_result, target='TEST')
+    assert len(strategy_result) == 4
     assert isinstance(strategy_result.value, pd.DataFrame)
     assert isinstance(strategy_result.value.index, pd.DatetimeIndex)
     assert strategy_result.value.columns == ['name']

@@ -22,3 +22,6 @@ class StrategyResult:
         df.set_index('date', inplace=True)
         df.index = pd.to_datetime(df.index)
         return cls(value=df, target=target)
+
+    def __len__(self):
+        return len(self.value)
