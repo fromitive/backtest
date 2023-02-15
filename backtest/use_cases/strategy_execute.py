@@ -1,21 +1,24 @@
-from backtest.domains.strategy import Strategy, StrategyType
+from backtest.domains.strategy import Strategy
 from backtest.domains.stockdata import StockData
 from backtest.domains.strategy_result import StrategyResult, StrategyResultColumnType
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
 import pandas as pd
 
 
-def _basic_function(strategy: Strategy):
+def basic_function(data: StockData, weight: int):
     response = StrategyResult(value=pd.DataFrame(
-        index=strategy.data.index, columns=[strategy.name]))
-    response.value[strategy.name] = [(
-        StrategyResultColumnType.KEEP, strategy.weight)] * len(strategy)
+        index=data.data.index, columns=[data.symbol]))
+    response.value[data.symbol] = [(
+        StrategyResultColumnType.KEEP, weight)] * len(data)
     return response
 
 
-def strategy_execute(strategy: Strategy,data: StockData):
+def strategy_execute(strategy: Strategy, data: StockData):
     try:
-        response = strategy.function(data=data,**strategy.options)
+        if not strategy.function:
+            strategy.function = basic_function
+        response = strategy.function(
+            data=data, weight=strategy.weight, **strategy.options)
         return ResponseSuccess(response)
     except Exception as e:
         return ResponseFailure(ResponseTypes.SYSTEM_ERROR, e)
