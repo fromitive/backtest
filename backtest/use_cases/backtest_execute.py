@@ -61,7 +61,7 @@ def backtest_execute(backtest: Backtest):
                             stockdata_raw['close'][index] - stockdata_raw['close'][profit_index])
                         profit_base = stockdata_raw['close'][profit_index]
                         sell_profit += profit_earn / profit_base
-                stockdata_raw['total_profit'][index] = sell_profit
+                stockdata_raw.at[index, 'total_profit'] = sell_profit
                 backtest_bucket = []
             stockdata_raw.at[index, 'stock_bucket'] = backtest_bucket[:]
         stockdata_raw = stockdata_raw[['total_profit', 'stock_bucket']]
