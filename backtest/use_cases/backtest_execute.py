@@ -42,7 +42,6 @@ def backtest_execute(backtest: Backtest):
         for column in strategy_total_result.columns:
             strategy_total_result[column] = strategy_total_result[column].fillna(
                 {i: (StrategyResultColumnType.KEEP, 0) for i in strategy_total_result.index})
-
         stockdata_raw['total'] = strategy_total_result.apply(
             lambda row: _sum_strategy(row), axis=1)
         # calculate profit and bucket
@@ -69,6 +68,7 @@ def backtest_execute(backtest: Backtest):
         # append total_result
         if len(backtest_result_raw.index) == 0:
             backtest_result_raw = stockdata_raw.copy()
+            continue
         elif len(backtest_result_raw.index) > len(stockdata_raw.index):
             stockdata_raw = stockdata_raw.reindex(
                 index=backtest_result_raw.index)
