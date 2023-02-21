@@ -93,7 +93,7 @@ def test_strategy_execute(sample_stock_data, sample_strategy_result):
                         target='TARGET', function=test_function, options={'param1': 'value1', 'param2': 'value2'})
     response = strategy_execute(strategy=strategy, data=sample_stock_data)
     test_function.assert_called_once_with(
-        data=sample_stock_data, weight=strategy.weight, param1='value1', param2='value2')
+        data=sample_stock_data, weight=strategy.weight, name=strategy.name, param1='value1', param2='value2')
     strategy_result = response.value
     assert isinstance(response, ResponseSuccess)
     assert isinstance(strategy_result, StrategyResult)
