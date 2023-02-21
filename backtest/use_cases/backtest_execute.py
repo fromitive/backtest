@@ -76,7 +76,7 @@ def backtest_execute(backtest: Backtest):
                 lambda d: d if not math.isnan(d) else 0.0)
             stockdata_raw['stock_bucket'] = stockdata_raw['stock_bucket'].apply(
                 lambda d: d if isinstance(d, list) else [])
-        elif len(backtest_result_raw.index) < len(backtest_result_raw.index):
+        elif len(backtest_result_raw.index) < len(stockdata_raw.index):
             backtest_result_raw = backtest_result_raw.reindex(
                 index=stockdata_raw.index)
             backtest_result_raw['total_profit'] = backtest_result_raw['total_profit'].apply(
