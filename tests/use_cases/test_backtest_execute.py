@@ -56,9 +56,9 @@ def stockdata_list(dict_stock_data_list):
 
 
 @pytest.fixture(scope='function')
-def stockdata_result():
+def strategy_result_data():
     sample_dict = {'date': ['2022-01-01', '2022-01-02', '2022-01-03', '2022-01-04', '2022-01-05'],
-                   'strategy1': [(StrategyResultColumnType.KEEP, 100),
+                   'name': [(StrategyResultColumnType.KEEP, 100),
                                  (StrategyResultColumnType.BUY, 100),
                                  (StrategyResultColumnType.SELL, 100),
                                  (StrategyResultColumnType.SELL, 100),
@@ -67,17 +67,20 @@ def stockdata_result():
 
 
 @mock.patch('backtest.use_cases.backtest_execute.strategy_execute')
-def test_backtest_execute_without_options(strategy_execute, strategy_list, stockdata_list, stockdata_result):
-    strategy_execute.return_value = ResponseSuccess(stockdata_result)
+def test_backtest_execute_without_options(strategy_execute, strategy_list, stockdata_list, strategy_result_data):
+    strategy_execute.return_value = ResponseSuccess(strategy_result_data)
     strategies = strategy_list
     stockdata = stockdata_list
     backtest = Backtest(strategy_list=strategies, stockdata_list=stockdata)
     response = backtest_execute(backtest)
     strategy_execute.assert_called()
+    print(response.value)
+    assert isinstance(response, ResponseSuccess)
     assert isinstance(response.value, BacktestResult)
     assert bool(response) == True
 
     backtest_result = response.value
+    assert isinstance(backtest_result,BacktestResult)
     assert isinstance(backtest_result.value, pd.DataFrame)
     assert backtest_result.value.index[0] == '2022-01-01'
     assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
