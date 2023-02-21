@@ -16,4 +16,4 @@ response = stockdata_from_repo(BithumbRepo(), request=request)
 stockdata = response.value
 strategy = Strategy(name='basic_strategy', function=basic_function)
 backtest = Backtest(strategy_list=[strategy], stockdata_list=[stockdata])
-backtest_execute(backtest)
+backtest_result = backtest_execute(backtest)
