@@ -59,10 +59,10 @@ def stockdata_list(dict_stock_data_list):
 def strategy_result_data():
     sample_dict = {'date': ['2022-01-01', '2022-01-02', '2022-01-03', '2022-01-04', '2022-01-05'],
                    'name': [(StrategyResultColumnType.KEEP, 100),
-                                 (StrategyResultColumnType.BUY, 100),
-                                 (StrategyResultColumnType.SELL, 100),
-                                 (StrategyResultColumnType.SELL, 100),
-                                 (StrategyResultColumnType.BUY, 100),]}
+                            (StrategyResultColumnType.BUY, 100),
+                            (StrategyResultColumnType.SELL, 100),
+                            (StrategyResultColumnType.SELL, 100),
+                            (StrategyResultColumnType.BUY, 100),]}
     return StrategyResult.from_dict(sample_dict, target='ALL')
 
 
@@ -74,15 +74,13 @@ def test_backtest_execute_without_options(strategy_execute, strategy_list, stock
     backtest = Backtest(strategy_list=strategies, stockdata_list=stockdata)
     response = backtest_execute(backtest)
     strategy_execute.assert_called()
-    print(response.value)
     assert isinstance(response, ResponseSuccess)
     assert isinstance(response.value, BacktestResult)
     assert bool(response) == True
-
     backtest_result = response.value
-    assert isinstance(backtest_result,BacktestResult)
+    assert isinstance(backtest_result, BacktestResult)
     assert isinstance(backtest_result.value, pd.DataFrame)
-    assert backtest_result.value.index[0] == '2022-01-01'
+    assert backtest_result.value.index[0].strftime("%Y-%m-%d") == '2022-01-01'
     assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
-    assert list(backtest_result.value.columns) == ['stock_bucket',
-                                                   'total_profit']
+    assert list(backtest_result.value.columns) == ['total_profit',
+                                                   'stock_bucket']
