@@ -25,6 +25,9 @@ class BithumbRepo:
             self.chart_intervals = filters['chart_intervals__eq'] if 'chart_intervals__eq' in filter else '24h'
             self.from_date = filters['from__eq'] if 'from__eq' in filter else ''
             self.to_date = filters['to__eq'] if 'to__eq' in filter else ''
+            if self.chart_intervals == '30m':
+                raise Exception(
+                    'request error - this repo not support chart_intervals 30m TT')
 
         request_url = self.API_URL.format(
             order_currency=self.order_currency,
