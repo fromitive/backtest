@@ -34,8 +34,8 @@ def _validate_date_format(date_text: str):
 
 def build_stock_data_from_repo_request(filters=None):
     accepted_filters = ["order__eq", "payment__eq",
-                        "chart_interval__eq", "from__eq", "to__eq"]
-    accepted_chart_interval_filters = ['24h', '1d']
+                        "chart_interval__eq", "from__eq", "to__eq", "start_time__eq", "end_time__eq"]
+    accepted_chart_interval_filters = ['24h', '1d', '30m']
     accepted_payment_filters = ['KRW', 'USDT']
     invalid_req = StockDataFromRepoInvalidRequest()
 
@@ -49,12 +49,19 @@ def build_stock_data_from_repo_request(filters=None):
                 invalid_req.add_error(
                     "filters", "Key {} cannot be used".format(key)
                 )
+
             if key == 'chart_interval__eq':
                 if value not in accepted_chart_interval_filters:
                     invalid_req.add_error(
                         "filters", "key {} - value {} cannot be used".format(
                             key, value)
                     )
+                if value == '30m':
+                    if 'start_time__eq' not in filters and 'end_time__eq' not in filters:
+                        invalid_req.add_error(
+                            "filters", "key {} must set parameter start_time__eq and end_time__eq".format(
+                                key)
+                        )
             if key == 'payment__eq':
                 if value not in accepted_payment_filters:
                     invalid_req.add_error(
