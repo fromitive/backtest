@@ -15,6 +15,8 @@ class UpbitRepo:
         self.chart_intervals = '24h'
         self.from_date = ''
         self.to_date = ''
+        self.str_start_time = ''
+        self.str_end_time = ''
         self.start_time = ''
         self.end_time = ''
         self.chart_interval_kind = ''
@@ -29,6 +31,7 @@ class UpbitRepo:
                 filters['from__eq'], "%Y-%m-%d") if 'from__eq' in filter else ''
             self.to_date = datetime.strptime(
                 filters['to__eq'], "%Y-%m-%d") if 'to__eq' in filter else ''
+            self.to_date += timedelta(hours=23, minutes=59)
 
             if self.chart_intervals == '30m':
                 start_hours = filters['start_time__eq'].split(
@@ -44,6 +47,8 @@ class UpbitRepo:
                 self.end_time = timedelta(
                     hours=int(end_hours), minutes=int(end_minutes))
                 self.chart_interval_kind = 'minutes/30'
+                self.str_start_time = filters['start_time__eq']
+                self.str_end_time = filters['end_time__eq']
             else:
                 self.chart_interval_kind = 'days'
         if self.to_date:
@@ -52,6 +57,7 @@ class UpbitRepo:
             self.to_date = self.to_date.strftime('%Y-%m-%dT%H:%M:%S')
         if self.from_date and self.start_time:
             self.from_date += self.start_time
+        print(self.to_date)
         request_url = self.API_URL.format(
             order_currency=self.order_currency,
             payment_currency=self.payment_currency,
@@ -127,7 +133,8 @@ class UpbitRepo:
                                       'low': 'float',
                                       'volume': 'float'})
             temp_df.sort_index(ascending=True, inplace=True)
-            temp_df = temp_df.between_time('06:00', '23:30').resample('D', label='left', closed='left').agg(
+            temp_df = temp_df.between_time(self.str_start_time, self.str_end_time).resample('D', label='left', closed='left').agg(
                 {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'})
+            temp_df = temp_df[:self.to_date]
             return StockData(symbol=self.order_currency, data=temp_df)
         return StockData.from_dict(temp_df.to_dict('list'), self.order_currency)
