@@ -127,7 +127,7 @@ class UpbitRepo:
                                       'low': 'float',
                                       'volume': 'float'})
             temp_df.sort_index(ascending=True, inplace=True)
-            temp_df = temp_df.between_time('06:00', '23:00').resample('D').agg(
+            temp_df = temp_df.between_time('06:00', '23:00').resample('D', label='left', closed='left').agg(
                 {'open': 'first', 'high': 'max', 'low': 'min', 'close': 'last', 'volume': 'sum'})
             return StockData(symbol=self.order_currency, data=temp_df)
         return StockData.from_dict(temp_df.to_dict('list'), self.order_currency)
