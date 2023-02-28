@@ -2,3 +2,4 @@ requests
 pandas
 numpy
 stockstats
+finance-datareader
