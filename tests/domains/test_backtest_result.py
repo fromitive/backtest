@@ -23,7 +23,8 @@ def dict_backtest_result():
             1.0,
             1.1,
             -2.1
-    ]}
+    ],}
+
 
 
 @pytest.fixture(scope='function')
@@ -40,15 +41,10 @@ def test_init_backtest_result_without_parameters():
     assert isinstance(backtest_result.value, pd.DataFrame)
     assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
     assert list(backtest_result.value.columns) == ['stock_bucket',
-                                                   'total_profit']
+                                                   'total_profit',
+                                                   'total_stock_count',
+                                                   'stock_count']
 
-
-def test_init_backtest_result_with_parameters(dict_backtest_result_dataframe):
-    backtest_result = BacktestResult(value=dict_backtest_result_dataframe)
-    assert isinstance(backtest_result.value, pd.DataFrame)
-    assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
-    assert list(backtest_result.value.columns) == ['stock_bucket',
-                                                   'total_profit']
 
 
 def test_init_backtest_result_from_dict(dict_backtest_result):
@@ -56,4 +52,6 @@ def test_init_backtest_result_from_dict(dict_backtest_result):
     assert isinstance(backtest_result.value, pd.DataFrame)
     assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
     assert list(backtest_result.value.columns) == ['stock_bucket',
-                                                   'total_profit']
+                                                   'total_profit',
+                                                   'total_stock_count',
+                                                   'stock_count']

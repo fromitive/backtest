@@ -71,7 +71,7 @@ def test_backtest_execute_without_options(strategy_execute, strategy_list, stock
     strategy_execute.return_value = ResponseSuccess(strategy_result_data)
     strategies = strategy_list
     stockdata = stockdata_list
-    backtest = Backtest(strategy_list=strategies, stockdata_list=stockdata)
+    backtest = Backtest(strategy_list=strategies, stockdata_list=stockdata,buy_price=5000.0)
     response = backtest_execute(backtest)
     strategy_execute.assert_called()
     assert isinstance(response, ResponseSuccess)
@@ -83,4 +83,6 @@ def test_backtest_execute_without_options(strategy_execute, strategy_list, stock
     assert backtest_result.value.index[0].strftime("%Y-%m-%d") == '2022-01-01'
     assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
     assert list(backtest_result.value.columns) == ['total_profit',
-                                                   'stock_bucket']
+                                                   'stock_bucket',
+                                                   'total_stock_count',
+                                                   'stock_count']
