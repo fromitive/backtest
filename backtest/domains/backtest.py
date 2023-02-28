@@ -8,3 +8,4 @@ from backtest.domains.strategy import Strategy
 class Backtest:
     strategy_list: List[Strategy]
     stockdata_list: List[StockData]
+    buy_price : float = 5000.0
