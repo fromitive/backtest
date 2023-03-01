@@ -31,7 +31,7 @@ def _calc_stock_count(stock_bucket):
 
 def backtest_execute(backtest: Backtest):
     try:
-        one_stock_buy_price = backtest.buy_price / len(backtest.stockdata_list)
+        stockdata_cnt = len(backtest.stockdata_list)
         backtest_result_raw = pd.DataFrame(
             index=pd.DatetimeIndex([]), columns=['total_profit', 'bucket'])
         for stockdata in backtest.stockdata_list:
@@ -68,12 +68,11 @@ def backtest_execute(backtest: Backtest):
                 elif stockdata_raw['total'][index] == StrategyResultColumnType.SELL:
                     sell_profit = 0
                     if len(backtest_bucket) > 0:
+                        bucket_len = len(backtest_bucket)
                         for symbol, profit_index in backtest_bucket:
-                            buy_count = one_stock_buy_price / \
-                                stockdata_raw['close'][profit_index]
                             profit_earn = (stockdata_raw['close'][index] - stockdata_raw['close'][profit_index])
                             profit_base = stockdata_raw['close'][profit_index]
-                            sell_profit += (profit_earn / profit_base) * buy_count
+                            sell_profit += ((profit_earn / profit_base) / bucket_len) / stockdata_cnt
                     stockdata_raw.at[index, 'total_profit'] = sell_profit
                     backtest_bucket = []
                 stockdata_raw.at[index, 'stock_bucket'] = backtest_bucket[:]

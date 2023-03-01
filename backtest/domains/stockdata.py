@@ -6,9 +6,7 @@ from datetime import datetime
 @dataclasses.dataclass
 class StockData:
     symbol: str = ""
-    data: pd.DataFrame = pd.DataFrame(columns=['open', 'high', 'low', 'close',
-                                               'volume'],
-                                      index=pd.DatetimeIndex([]))
+    data: pd.DataFrame = dataclasses.field(default_factory=pd.DataFrame)
 
     @classmethod
     def from_dict(cls, dict_data, symbol=''):

@@ -11,8 +11,7 @@ class StrategyResultColumnType(Enum):
 
 @dataclasses.dataclass
 class StrategyResult:
-    value: pd.DataFrame = pd.DataFrame(
-        columns=[''], index=pd.DatetimeIndex([]))
+    value: pd.DataFrame = dataclasses.field(default_factory=pd.DataFrame)
     target: str = 'ALL'
 
     @classmethod
