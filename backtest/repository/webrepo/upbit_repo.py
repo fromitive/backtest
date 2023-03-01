@@ -30,7 +30,7 @@ class UpbitRepo:
             self.from_date = datetime.strptime(
                 filters['from__eq'], "%Y-%m-%d") if 'from__eq' in filter else ''
             self.to_date = datetime.strptime(
-                filters['to__eq'], "%Y-%m-%d") if 'to__eq' in filter else ''
+                filters['to__eq'], "%Y-%m-%d") if 'to__eq' in filter else datetime.now()
             self.to_date += timedelta(hours=23, minutes=59)
 
             if self.chart_intervals == '30m':
