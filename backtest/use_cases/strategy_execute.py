@@ -2,6 +2,7 @@ from backtest.domains.strategy import Strategy
 from backtest.domains.stockdata import StockData
 from backtest.domains.strategy_result import StrategyResult, StrategyResultColumnType
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
+from backtest.util.stockdata_util import get_greed_fear_index
 import pandas as pd
 
 
@@ -46,6 +47,20 @@ def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: S
     """
     response.value[name] = _dataframe_rsi(
         big_stock.data, weight, rolling)['result']
+    return response
+
+def greed_fear_index_function(data: StockData, weight: int, name: str, greed_fear_index_data: pd.DataFrame,index_fear: int,index_greed: int):
+    response = StrategyResult(value=pd.DataFrame(
+    index=data.data.index, columns=[name]))
+    raw_result=data.data.join(greed_fear_index_data,how='inner')
+    def _greed_fear_index(r):
+        if (r['value']) < index_fear: # extreme greed
+            return (StrategyResultColumnType.BUY, weight)
+        elif (r['value'] > index_greed):
+            return (StrategyResultColumnType.BUY, weight)
+        else:
+            return (StrategyResultColumnType.KEEP, weight)
+    response.value[name] = raw_result.apply(lambda r: _greed_fear_index(r), axis=1)
     return response
 
 
