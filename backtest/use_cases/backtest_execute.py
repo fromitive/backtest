@@ -62,21 +62,23 @@ def backtest_execute(backtest: Backtest):
             stockdata_raw.at[stockdata_raw.index[0], 'stock_bucket'] = 'DUMMY'
             backtest_bucket = []
             for index in stockdata_raw.index:
+                sell_profit = 0
+                if len(backtest_bucket) > 0:
+                    bucket_len = len(backtest_bucket)
+                    for symbol, profit_index in backtest_bucket:
+                        profit_earn = (stockdata_raw['close'][index] - stockdata_raw['close'][profit_index])
+                        profit_base = stockdata_raw['close'][profit_index]
+                        sell_profit += ((profit_earn / profit_base) / bucket_len) / stockdata_cnt
+                
                 if stockdata_raw['total'][index] == StrategyResultColumnType.BUY:
                     backtest_bucket.append(
                         (stockdata.symbol, index))
                 elif stockdata_raw['total'][index] == StrategyResultColumnType.SELL:
-                    sell_profit = 0
-                    if len(backtest_bucket) > 0:
-                        bucket_len = len(backtest_bucket)
-                        for symbol, profit_index in backtest_bucket:
-                            profit_earn = (stockdata_raw['close'][index] - stockdata_raw['close'][profit_index])
-                            profit_base = stockdata_raw['close'][profit_index]
-                            sell_profit += ((profit_earn / profit_base) / bucket_len) / stockdata_cnt
                     stockdata_raw.at[index, 'total_profit'] = sell_profit
                     backtest_bucket = []
                 stockdata_raw.at[index, 'stock_bucket'] = backtest_bucket[:]
-            stockdata_raw = stockdata_raw[['total_profit', 'stock_bucket']]
+                stockdata_raw.at[index, 'total_potential_profit'] = sell_profit
+            stockdata_raw = stockdata_raw[['total_profit', 'stock_bucket','total_potential_profit']]
             # append total_result
             if len(backtest_result_raw.index) == 0:
                 backtest_result_raw = stockdata_raw.copy()
@@ -86,12 +88,16 @@ def backtest_execute(backtest: Backtest):
                     index=backtest_result_raw.index)
                 stockdata_raw['total_profit'] = stockdata_raw['total_profit'].apply(
                     lambda d: d if not math.isnan(d) else 0.0)
+                stockdata_raw['total_potential_profit'] = stockdata_raw['total_potential_profit'].apply(
+                    lambda d: d if not math.isnan(d) else 0.0)
                 stockdata_raw['stock_bucket'] = stockdata_raw['stock_bucket'].apply(
                     lambda d: d if isinstance(d, list) else [])
             elif len(backtest_result_raw.index) < len(stockdata_raw.index):
                 backtest_result_raw = backtest_result_raw.reindex(
                     index=stockdata_raw.index)
                 backtest_result_raw['total_profit'] = backtest_result_raw['total_profit'].apply(
+                    lambda d: d if not math.isnan(d) else 0.0)
+                backtest_result_raw['total_potential_profit'] = backtest_result_raw['total_potential_profit'].apply(
                     lambda d: d if not math.isnan(d) else 0.0)
                 backtest_result_raw['stock_bucket'] = backtest_result_raw['stock_bucket'].apply(
                     lambda d: d if isinstance(d, list) else [])

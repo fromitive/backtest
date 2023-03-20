@@ -84,5 +84,6 @@ def test_backtest_execute_without_options(strategy_execute, strategy_list, stock
     assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
     assert list(backtest_result.value.columns) == ['total_profit',
                                                    'stock_bucket',
+                                                   'total_potential_profit',
                                                    'total_stock_count',
                                                    'stock_count']

@@ -53,5 +53,6 @@ def test_init_backtest_result_from_dict(dict_backtest_result):
     assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
     assert list(backtest_result.value.columns) == ['stock_bucket',
                                                    'total_profit',
+                                                   'total_potential_profit',
                                                    'total_stock_count',
                                                    'stock_count']
