@@ -25,3 +25,10 @@ class StockData:
 
     def __len__(self):
         return len(self.data)
+
+    def __add__(self, o):
+        if self.data.index[0] > o.data.index[0]:
+            self.data = o.data.add(self.data, fill_value=0.0)
+        else:
+            self.data.add(self.data, fill_value=0.0)
+        return self
