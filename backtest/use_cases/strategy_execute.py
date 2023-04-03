@@ -67,9 +67,9 @@ def rsi_function(data: StockData, weight: int, name: str, period: int,overbought
     index=data.data.index, columns=[name]))
     data.data['rsi']=_calculate_rsi(data.data['close'],period)
     def _rsi_function(r):
-        if r <= oversold_level and r > oversold_level:
+        if r <= oversold_level:
             return (StrategyResultColumnType.BUY, weight)
-        elif r >= overbought_level and r < overbought_level:
+        elif r >= overbought_level:
             return (StrategyResultColumnType.SELL, weight)
         else:
             return (StrategyResultColumnType.KEEP, weight) 
