@@ -4,11 +4,14 @@ from backtest.domains.strategy import Strategy
 from backtest.domains.strategy import StockData
 from backtest.domains.strategy_result import StrategyResultColumnType
 from backtest.use_cases.strategy_execute import strategy_execute
+from backtest.use_cases.standardize_stock import standardize_stock
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
+from typing import List
 
 import pandas as pd
 import numpy as np
 import math
+
 
 
 def _sum_strategy(series: pd.Series):
@@ -30,21 +33,55 @@ def _calc_stock_count(stock_bucket):
             summary_bucket[symbol] += 1
     return summary_bucket
 
+def _generate_strategy_execute_result(strategy_list:List[Strategy],stockdata:StockData):
+    strategy_total_result = pd.DataFrame(
+        index=pd.DatetimeIndex([]))
+    stockdata_raw = stockdata.data
+    for strategy in strategy_list:
+        response = strategy_execute(
+            strategy=strategy, data=stockdata)
+        if isinstance(response, ResponseFailure):
+            raise Exception('strategy_response error!')
+        else:
+            strategy_result = response.value
+            if strategy_result.value.columns[0] not in strategy_total_result.columns:
+                if strategy_result.target == stockdata.symbol or strategy_result.target == 'ALL':
+                    strategy_total_result = strategy_total_result.join(
+                        strategy_result.value, how='outer')
+
+    # fill na with
+    for column in strategy_total_result.columns:
+        strategy_total_result[column] = strategy_total_result[column].fillna(
+            {i: (StrategyResultColumnType.KEEP, 0) for i in strategy_total_result.index})
+    stockdata_raw['total_before'] = strategy_total_result.apply(
+        lambda row: _sum_strategy(row), axis=1)
+
 
 def backtest_execute(backtest: Backtest):
     try:
         stockdata_cnt = len(backtest.stockdata_list)
+        standardize_stock(stockdata_list=backtest.stockdata_list)
+        base_index = backtest.stockdata_list[0].data.index
+        strategy_result_dict = {stockdata.symbol: None for stockdata in backtest.stockdata_list}
         # divide pre post strategy list
         pre_strategy_list = [
             strategy for strategy in backtest.strategy_list if not strategy.after]
         post_strategy_list = [
             strategy for strategy in backtest.strategy_list if strategy.after]
         backtest_result_raw = pd.DataFrame(
-            index=pd.DatetimeIndex([]), columns=['total_profit', 'bucket'])
-        for stockdata in backtest.stockdata_list:
-            stockdata_raw = stockdata.data
-            strategy_pre_total_result = pd.DataFrame(
-                index=pd.DatetimeIndex([]))
+            index=base_index, columns=['total_profit', 'bucket'])
+        #loop base_index
+        for index in base_index:
+            pick_stockdata_list = backtest.stockdata_list # future fix
+
+            #if not calc pre_strategy_result calc it.
+            for stockdata in pick_stockdata_list:
+                if not strategy_result_dict[stockdata.symbol]:
+                    strategy_result_dict[stockdata.symbol] = _generate_strategy_execute_result(
+                        strategy_list=pre_strategy_list,stockdata=stockdata)
+            
+            #calc profit : future TODO HERE!!
+
             # pre strategy execute
             for strategy in pre_strategy_list:
                 response = strategy_execute(strategy=strategy, data=stockdata)
@@ -56,18 +93,10 @@ def backtest_execute(backtest: Backtest):
                         if strategy_result.target == stockdata.symbol or strategy_result.target == 'ALL':
                             strategy_pre_total_result = strategy_pre_total_result.join(
                                 strategy_result.value, how='outer')
-            # fill na with
-            for column in strategy_pre_total_result.columns:
-                strategy_pre_total_result[column] = strategy_pre_total_result[column].fillna(
-                    {i: (StrategyResultColumnType.KEEP, 0) for i in strategy_pre_total_result.index})
-            stockdata_raw['total_before'] = strategy_pre_total_result.apply(
-                lambda row: _sum_strategy(row), axis=1)
+
 
             # calculate profit and bucket
-            stockdata_raw['total_profit'] = 0
-            stockdata_raw['stock_bucket'] = np.nan
-            stockdata_raw['stock_bucket'].astype('object')
-            stockdata_raw.at[stockdata_raw.index[0], 'stock_bucket'] = 'DUMMY'
+
             backtest_bucket = []
             for index in stockdata_raw.index:
                 sell_profit = 0
