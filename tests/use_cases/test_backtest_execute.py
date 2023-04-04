@@ -1,4 +1,5 @@
 from backtest.use_cases.backtest_execute import backtest_execute
+from backtest.use_cases.backtest_execute import _generate_strategy_execute_result
 from backtest.domains.backtest import Backtest
 from backtest.domains.strategy import Strategy
 from backtest.domains.stockdata import StockData
@@ -71,7 +72,8 @@ def test_backtest_execute_without_options(strategy_execute, strategy_list, stock
     strategy_execute.return_value = ResponseSuccess(strategy_result_data)
     strategies = strategy_list
     stockdata = stockdata_list
-    backtest = Backtest(strategy_list=strategies, stockdata_list=stockdata,buy_price=5000.0)
+    backtest = Backtest(strategy_list=strategies,
+                        stockdata_list=stockdata, buy_price=5000.0)
     response = backtest_execute(backtest)
     strategy_execute.assert_called()
     assert isinstance(response, ResponseSuccess)
@@ -87,3 +89,11 @@ def test_backtest_execute_without_options(strategy_execute, strategy_list, stock
                                                    'total_potential_profit',
                                                    'total_stock_count',
                                                    'stock_count']
+
+
+def test_backtest_execute_innder_function__generate_strategy_execute_result(strategy_list, stockdata_list):
+    for stockdata in stockdata_list:
+        result = _generate_strategy_execute_result(
+            strategy_list=strategy_list, stockdata=stockdata)
+        assert isinstance(result, pd.Series)
+        assert len(result) == len(stockdata.data)
