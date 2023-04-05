@@ -15,20 +15,23 @@ import sys
 import os
 
 
-def _sum_strategy(series: pd.Series):
+def _sum_strategy(series: pd.Series, stockdata: StockData):
     total_result = {StrategyResultColumnType.KEEP: 0,
                     StrategyResultColumnType.SELL: 0,
                     StrategyResultColumnType.BUY: 0}
     for idx in series.index:
         type, weight = series[idx]
-        total_result[type] += weight
+        if stockdata.data['volume'][series.name] == 0.0:
+            total_result[StrategyResultColumnType.KEEP] += weight
+        else:
+            total_result[type] += weight
     return max(total_result, key=total_result.get)
 
 
 def _calc_stock_count(stock_bucket):
     summary_bucket = dict()
     for symbol in stock_bucket:
-        symbol_bucket_len=len(stock_bucket[symbol])
+        symbol_bucket_len = len(stock_bucket[symbol])
         if symbol_bucket_len > 0:
             summary_bucket[symbol] = symbol_bucket_len
     return summary_bucket
@@ -54,7 +57,8 @@ def _generate_strategy_execute_result(strategy_list: List[Strategy], stockdata: 
     for column in strategy_total_result.columns:
         strategy_total_result[column] = strategy_total_result[column].fillna(
             {i: (StrategyResultColumnType.KEEP, 0) for i in strategy_total_result.index})
-    return strategy_total_result.apply(lambda row: _sum_strategy(row), axis=1)
+    return strategy_total_result.apply(
+        lambda row: _sum_strategy(row, stockdata), axis=1)
 
 
 def backtest_execute(backtest: Backtest):
@@ -78,47 +82,59 @@ def backtest_execute(backtest: Backtest):
             strategy for strategy in backtest.strategy_list if not strategy.after]
         post_strategy_list = [
             strategy for strategy in backtest.strategy_list if strategy.after]
-        
-        #init backtest_result
+
+        # init backtest_result
         backtest_result_raw = pd.DataFrame(
             index=base_index, columns=['total_profit', 'stock_bucket', 'total_potential_profit'])
-        backtest_result_raw['total_profit']=0.0
+        backtest_result_raw['total_profit'] = 0.0
         backtest_result_raw['stock_bucket'] = np.nan
         backtest_result_raw['stock_bucket'].astype('object')
         backtest_result_raw.at[backtest_result_raw.index[0],
-                                'stock_bucket'] = 'DUMMY'
-        backtest_result_raw['total_potential_profit']=0.0
+                               'stock_bucket'] = 'DUMMY'
+        backtest_result_raw['total_potential_profit'] = 0.0
 
         # loop base_index
+        bucket_cnt = 0
         for index in base_index:
             pick_stockdata_list = backtest.stockdata_list  # future fix
-            #calc potential profit and each symbol stock profit
+            # calc potential profit and each symbol stock profit
             total_potential_profit = 0.0
+
             for symbol in stockdata_dict:
-                symbol_profit=0.0
+                symbol_profit = 0.0
                 for profit_index in stock_bucket_dict[symbol]:
                     profit_earn = stockdata_dict[symbol].data['close'][index] - \
                         stockdata_dict[symbol].data['close'][profit_index]
                     profit_base = stockdata_dict[symbol].data['close'][profit_index]
-                    symbol_profit += (profit_earn /
-                                    profit_base) / stockdata_cnt
+                    symbol_profit += ((profit_earn /
+                                      profit_base) / bucket_cnt) / stockdata_cnt
                 stock_profit_dict[symbol] = symbol_profit
                 total_potential_profit += symbol_profit
-            backtest_result_raw.at[index,'total_potential_profit'] = total_potential_profit
+                if len(stock_bucket_dict[symbol]) > 0:  # already calcuated stock
+                    strategy_result_of_day = strategy_result_dict[symbol][index]
+                    # sell strategy execute
+                    if strategy_result_of_day == StrategyResultColumnType.SELL:
+                        bucket_cnt -= len(stock_bucket_dict[symbol])
+                        stock_bucket_dict[symbol] = []
+                        backtest_result_raw.at[index,
+                                               'total_profit'] += stock_profit_dict[symbol]
+                        total_potential_profit -= stock_profit_dict[symbol]
+            backtest_result_raw.at[index,
+                                   'total_potential_profit'] = total_potential_profit
             for stockdata in pick_stockdata_list:
                 # if not calc pre_strategy_result calc it.
-                if not isinstance(strategy_result_dict[stockdata.symbol],pd.Series):
+                if not isinstance(strategy_result_dict[stockdata.symbol], pd.Series):
                     strategy_result_dict[stockdata.symbol] = _generate_strategy_execute_result(
                         strategy_list=pre_strategy_list, stockdata=stockdata)
                 strategy_result_of_day = strategy_result_dict[stockdata.symbol][index]
                 if strategy_result_of_day == StrategyResultColumnType.BUY:
                     stock_bucket_dict[stockdata.symbol].append(index)
-                elif strategy_result_of_day == StrategyResultColumnType.SELL:
-                    stock_bucket_dict[stockdata.symbol] = []
-                    backtest_result_raw.at[index,'total_profit']+=stock_profit_dict[symbol]
-                #TODO: post_strategy_execute
-            backtest_result_raw.at[index,'stock_bucket'] = _calc_stock_count(stock_bucket_dict)
-                    # calculate profit and bucket
+                    bucket_cnt += 1
+
+                # TODO: post_strategy_execute
+            backtest_result_raw.at[index, 'stock_bucket'] = _calc_stock_count(
+                stock_bucket_dict)
+            # calculate profit and bucket
             # post strategy execute
         return ResponseSuccess(BacktestResult(value=backtest_result_raw))
     except Exception as e:

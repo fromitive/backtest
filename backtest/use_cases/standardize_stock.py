@@ -10,7 +10,9 @@ def standardize_stock(stockdata_list: List[StockData]):
     mindate = stockdata_list[0].data.index[0]
     for stockdata in stockdata_list:
         mindate = min(stockdata.data.index[0], mindate)
+    print(mindate)
     empty_stockData = generate_empty_stockData(
         from_date=datetime.strftime(mindate, "%Y-%m-%d"))
+    len(empty_stockData)
     for stockdata in stockdata_list:
         stockdata += empty_stockData
