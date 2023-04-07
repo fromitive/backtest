@@ -3,6 +3,7 @@ from backtest.domains.stockdata import StockData
 from backtest.domains.strategy_result import StrategyResult, StrategyResultColumnType
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
 from backtest.util.stockdata_util import get_greed_fear_index
+from typing import List
 import pandas as pd
 
 
@@ -12,7 +13,6 @@ def basic_function(data: StockData, weight: int, name: str):
     response.value[name] = [(
         StrategyResultColumnType.KEEP, weight)] * len(data)
     return response
-
 
 
 def _dataframe_sma(df: pd.DataFrame, weight: int, rolling=100):
@@ -26,6 +26,22 @@ def _dataframe_sma(df: pd.DataFrame, weight: int, rolling=100):
             return (StrategyResultColumnType.KEEP, weight)
         else:
             return (StrategyResultColumnType.BUY, weight)
+    df['result'] = df.apply(lambda r: _sma_internal(r), axis=1)
+    return df
+
+
+def _dataframe_sma_multi(df: pd.DataFrame, weight: int, rolling_list: List[int]):
+    for rolling in rolling_list:
+        df['sma_{}'.format(rolling)] = df['close'].rolling(
+            rolling).mean().fillna(0)
+
+    def _sma_internal(r):
+        if all([(r.close - r['sma_{}'.format(rolling)]) > 0.0 for rolling in rolling_list]):
+            return (StrategyResultColumnType.SELL, weight)
+        elif all([(r.close - r['sma_{}'.format(rolling)]) < 0.0 for rolling in rolling_list]):
+            return (StrategyResultColumnType.BUY, weight)
+        else:
+            return (StrategyResultColumnType.KEEP, weight)
     df['result'] = df.apply(lambda r: _sma_internal(r), axis=1)
     return df
 
@@ -50,6 +66,29 @@ def sma_big_stock_function(data: StockData, weight: int, name: str, big_stock: S
         big_stock.data, weight, rolling)['result']
     return response
 
+
+def sma_multi_function(data: StockData, weight: int, name: str, rolling_list: List[int] = [15, 100]):
+    response = StrategyResult(value=pd.DataFrame(
+        index=data.data.index, columns=[name]))
+    """
+    strategyfunction here
+    """
+    response.value[name] = _dataframe_sma_multi(
+        data.data, weight, rolling_list)['result']
+    return response
+
+
+def sma_multi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, rolling_list: List[int] = [15, 100]):
+    response = StrategyResult(value=pd.DataFrame(
+        index=data.data.index, columns=[name]))
+    """
+    strategyfunction here
+    """
+    response.value[name] = _dataframe_sma_multi(
+        big_stock.data, weight, rolling_list)['result']
+    return response
+
+
 def _calculate_rsi(data, period):
     delta = data.diff().dropna()
     gain = delta.where(delta > 0, 0)
@@ -62,47 +101,55 @@ def _calculate_rsi(data, period):
     rsi = 100 - (100 / (1 + rs))
     return rsi
 
-def rsi_function(data: StockData, weight: int, name: str, period: int,overbought_level: int,oversold_level: int):
+
+def rsi_function(data: StockData, weight: int, name: str, period: int, overbought_level: int, oversold_level: int):
     response = StrategyResult(value=pd.DataFrame(
-    index=data.data.index, columns=[name]))
-    data.data['rsi']=_calculate_rsi(data.data['close'],period)
+        index=data.data.index, columns=[name]))
+    data.data['rsi'] = _calculate_rsi(data.data['close'], period)
+
     def _rsi_function(r):
         if r <= oversold_level:
             return (StrategyResultColumnType.BUY, weight)
         elif r >= overbought_level:
             return (StrategyResultColumnType.SELL, weight)
         else:
-            return (StrategyResultColumnType.KEEP, weight) 
-    response.value[name]=data.data.apply(lambda r:_rsi_function(r['close']),axis=1)
+            return (StrategyResultColumnType.KEEP, weight)
+    response.value[name] = data.data.apply(
+        lambda r: _rsi_function(r['close']), axis=1)
     return response
 
-def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData,period: int,overbought_level: int,oversold_level: int):
+
+def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, period: int, overbought_level: int, oversold_level: int):
     response = StrategyResult(value=pd.DataFrame(
-    index=data.data.index, columns=[name]))
-    data.data['rsi']=_calculate_rsi(big_stock.data['close'],period)
+        index=data.data.index, columns=[name]))
+    data.data['rsi'] = _calculate_rsi(big_stock.data['close'], period)
+
     def _rsi_function(r):
         if r <= oversold_level and r > oversold_level:
             return (StrategyResultColumnType.BUY, weight)
         elif r >= overbought_level and r < overbought_level:
             return (StrategyResultColumnType.SELL, weight)
         else:
-            return (StrategyResultColumnType.KEEP, weight) 
-    response.value[name]=data.data.apply(lambda r:_rsi_function(r['close']),axis=1)
+            return (StrategyResultColumnType.KEEP, weight)
+    response.value[name] = data.data.apply(
+        lambda r: _rsi_function(r['close']), axis=1)
     return response
 
 
-def greed_fear_index_function(data: StockData, weight: int, name: str, greed_fear_index_data: pd.DataFrame,index_fear: int,index_greed: int):
+def greed_fear_index_function(data: StockData, weight: int, name: str, greed_fear_index_data: pd.DataFrame, index_fear: int, index_greed: int):
     response = StrategyResult(value=pd.DataFrame(
-    index=data.data.index, columns=[name]))
-    raw_result=data.data.join(greed_fear_index_data,how='inner')
+        index=data.data.index, columns=[name]))
+    raw_result = data.data.join(greed_fear_index_data, how='inner')
+
     def _greed_fear_index(r):
-        if (r['value']) < index_fear: # extreme greed
+        if (r['value']) < index_fear:  # extreme greed
             return (StrategyResultColumnType.BUY, weight)
         elif (r['value'] > index_greed):
             return (StrategyResultColumnType.BUY, weight)
         else:
             return (StrategyResultColumnType.KEEP, weight)
-    response.value[name] = raw_result.apply(lambda r: _greed_fear_index(r), axis=1)
+    response.value[name] = raw_result.apply(
+        lambda r: _greed_fear_index(r), axis=1)
     return response
 
 
