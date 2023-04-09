@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from backtest.repository.webrepo.binance_repo import BinanceRepo
+from backtest.repository.webrepo.crypto.binance_repo import BinanceRepo
 from backtest.domains.stockdata import StockData
 from unittest import mock
 

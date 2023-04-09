@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from backtest.repository.webrepo.bithumb_repo import BithumbRepo
+from backtest.repository.webrepo.crypto.bithumb_repo import BithumbRepo
 from backtest.domains.stockdata import StockData
 from unittest import mock
 
