@@ -19,11 +19,13 @@ def dict_strategy_result():
 @pytest.fixture(scope='function')
 def dict_strategy_result2():
     return {'date': ['2022-01-01', '2022-01-02', '2022-01-03', '2022-01-04', '2022-01-05'],
-     'strategy1': [(StrategyResultColumnType.KEEP, 100),
-                   (StrategyResultColumnType.BUY, 100),
-                   (StrategyResultColumnType.SELL, 100),
-                   (StrategyResultColumnType.SELL, 100),
-                   (StrategyResultColumnType.BUY, 100),]}
+            'strategy1': [(StrategyResultColumnType.KEEP, 100),
+                          (StrategyResultColumnType.BUY, 100),
+                          (StrategyResultColumnType.SELL, 100),
+                          (StrategyResultColumnType.SELL, 100),
+                          (StrategyResultColumnType.BUY, 100),]}
+
+
 @pytest.fixture(scope='function')
 def strategy_result_data_frame(dict_strategy_result):
     df = pd.DataFrame(dict_strategy_result,
@@ -36,8 +38,8 @@ def strategy_result_data_frame(dict_strategy_result):
 def test_init_strategy_result_without_parameter():
     strategy_result = StrategyResult()
     assert isinstance(strategy_result.value, pd.DataFrame)
-    #assert isinstance(strategy_result.value.index, pd.DatetimeIndex)
-    #assert '' in strategy_result.value.columns
+    # assert isinstance(strategy_result.value.index, pd.DatetimeIndex)
+    # assert '' in strategy_result.value.columns
 
 
 def test_init_strategy_result_with_parameter(strategy_result_data_frame):
