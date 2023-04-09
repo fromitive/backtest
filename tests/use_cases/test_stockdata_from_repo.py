@@ -18,3 +18,12 @@ def test_stockdata_from_repo(sample_empty_stockdata):
     repo.get.assert_called_with(filters=None)
     assert bool(response) == True
     assert response.value == sample_empty_stockdata
+
+
+def test_stockdata_from_repo_with_invalid_request(sample_empty_stockdata):
+    repo = mock.Mock()
+    repo.get.return_value = sample_empty_stockdata
+    request = None
+    response = stockdata_from_repo(repo, request)
+    assert bool(response) == False
+    assert response.value['type'] == 'ParametersError'

@@ -16,7 +16,7 @@ class StockDataFromRepoInvalidRequest:
         return False
 
 
-class StockDataFromReponValidRequest:
+class StockDataFromRepoValidRequest:
     def __init__(self, filters=None):
         self.filters = filters
 
@@ -84,4 +84,4 @@ def build_stock_data_from_repo_request(filters=None):
         if invalid_req.has_errors():
             return invalid_req
 
-    return StockDataFromReponValidRequest(filters=filters)
+    return StockDataFromRepoValidRequest(filters=filters)
