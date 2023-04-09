@@ -1,6 +1,6 @@
 import pytest
 import pandas as pd
-from backtest.repository.webrepo.upbit_repo import UpbitRepo
+from backtest.repository.webrepo.crypto.upbit_repo import UpbitRepo
 from backtest.domains.stockdata import StockData
 from unittest import mock
 
