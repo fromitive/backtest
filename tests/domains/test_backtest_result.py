@@ -24,8 +24,7 @@ def dict_backtest_result():
             1.0,
             1.1,
             -2.1
-    ],}
-
+    ], }
 
 
 @pytest.fixture(scope='function')
