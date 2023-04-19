@@ -1,8 +1,10 @@
-import requests
-import pandas as pd
 import time
-from backtest.domains.stockdata import StockData
 from datetime import datetime, timedelta
+
+import pandas as pd
+import requests
+
+from backtest.domains.stockdata import StockData
 
 
 class UpbitRepo:
@@ -57,7 +59,6 @@ class UpbitRepo:
             self.to_date = self.to_date.strftime('%Y-%m-%dT%H:%M:%S')
         if self.from_date and self.start_time:
             self.from_date += self.start_time
-        print(self.to_date)
         request_url = self.API_URL.format(
             order_currency=self.order_currency,
             payment_currency=self.payment_currency,
@@ -79,7 +80,6 @@ class UpbitRepo:
                     data_last_date = data_last_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
 
-                print(before_date, data_last_date)
                 if before_date != '' and data_last_date == before_date:
                     break
             else:
@@ -105,7 +105,7 @@ class UpbitRepo:
                         compare_date = compare_date.replace(
                             hour=0, minute=0, second=0, microsecond=0)
                     if compare_date == self.from_date:
-                        result_list = result_list[:idx+1]
+                        result_list = result_list[:idx + 1]
                         flag = True
                         break
                     idx -= 1
