@@ -1,5 +1,6 @@
 import pandas as pd
 import pytest
+
 from backtest.domains.backtest_result import BacktestResult
 
 
@@ -39,12 +40,11 @@ def dict_backtest_result_dataframe(dict_backtest_result):
 def test_init_backtest_result_without_parameters():
     backtest_result = BacktestResult()
     assert isinstance(backtest_result.value, pd.DataFrame)
-    #assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
-    #assert list(backtest_result.value.columns) == ['stock_bucket',
+    # assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
+    # assert list(backtest_result.value.columns) == ['stock_bucket',
     #                                               'total_profit',
     #                                               'total_stock_count',
     #                                               'stock_count']
-
 
 
 def test_init_backtest_result_from_dict(dict_backtest_result):
