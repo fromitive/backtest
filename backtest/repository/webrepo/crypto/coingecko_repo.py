@@ -40,7 +40,7 @@ class CoinGeckoRepo:
         request_url = self.API_URL.format(
             symbol_id=self.symbol_id,
             from_timestamp=self.from_timestamp,
-            to_timestamp=self.to_timestamp) = n
+            to_timestamp=self.to_timestamp)
         response = requests.get(request_url, headers=self.API_HEADERS)
         if response.status_code == 200:
             dict_data = response.json().get('stats')
