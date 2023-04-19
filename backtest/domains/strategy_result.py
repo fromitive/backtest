@@ -20,7 +20,7 @@ class StrategyResult:
         df = pd.DataFrame(adict,
                           columns=[item for item in adict.keys()])
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index, format='mixed')
+        df.index = pd.to_datetime(df.index, dayfirst=True)
         return cls(value=df, target=target)
 
     def __len__(self):

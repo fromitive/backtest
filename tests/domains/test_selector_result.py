@@ -32,7 +32,7 @@ def selector_result_dataframe(dict_selector_result1):
     df = pd.DataFrame(dict_selector_result1,
                       columns=['name', 'date'])
     df.set_index('date', inplace=True)
-    df.index = pd.to_datetime(df.index, format='mixed')
+    df.index = pd.to_datetime(df.index, dayfirst=True)
     return df
 
 

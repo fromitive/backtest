@@ -14,7 +14,7 @@ class StockData:
                                               'volume', 'date'])
         df.drop_duplicates(inplace=True)
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index, format='mixed').normalize()
+        df.index = pd.to_datetime(df.index, dayfirst=True).normalize()
         df = df.astype({'open': 'float',
                         'high': 'float',
                         'close': 'float',

@@ -32,7 +32,7 @@ def strategy_result_data_frame(dict_strategy_result):
     df = pd.DataFrame(dict_strategy_result,
                       columns=['name', 'date'])
     df.set_index('date', inplace=True)
-    df.index = pd.to_datetime(df.index, format='mixed')
+    df.index = pd.to_datetime(df.index, dayfirst=True)
     return df
 
 
