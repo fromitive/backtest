@@ -1,6 +1,6 @@
 # coingeckco repo - return SelectorReference
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 import requests
@@ -14,7 +14,7 @@ def convert_timestamp(str_date: str) -> int:
 
 
 class CoinGeckoRepo:
-    API_URL = 'https://www.coingecko.com/market_cap/{symbol_id}/usd/custom.json?from={from_timestamp}&to={from_timestamp}'
+    API_URL = 'https://www.coingecko.com/market_cap/{symbol_id}/usd/custom.json?from={from_timestamp}&to={to_timestamp}'
     API_HEADERS = {"accept": "application/json"}
 
     def __init__(self):
@@ -31,18 +31,19 @@ class CoinGeckoRepo:
             filter = list(filters.keys())
             self.symbol = filters['symbol__eq'] if 'symbol__eq' in filter else 'BTC'
             self.from_date = filters['from__eq'] if 'from__eq' in filter else '1999-01-01'
-            self.to_date = filters['from__eq'] if 'to__eq' in filter else datetime.strftime(
+            self.to_date = filters['to__eq'] if 'to__eq' in filter else datetime.strftime(
                 datetime.now(), "%Y-%m-%d")
             self.from_timestamp = convert_timestamp(self.from_date)
-            self.to_timestamp = convert_timestamp(self.to_date)
+            self.to_timestamp = convert_timestamp(
+                self.to_date) + 86320  # for add 23:59
             self.symbol_id = get_coingecko_symbol_id(self.symbol)
         request_url = self.API_URL.format(
             symbol_id=self.symbol_id,
             from_timestamp=self.from_timestamp,
-            to_timestamp=self.to_timestamp)
+            to_timestamp=self.to_timestamp) = n
         response = requests.get(request_url, headers=self.API_HEADERS)
         if response.status_code == 200:
-            dict_data = response.json().get('data')['stats']
+            dict_data = response.json().get('stats')
             temp_df = pd.DataFrame(
                 dict_data, columns=['time', 'marketcap'])
             temp_df['date'] = temp_df['time'].apply(
@@ -50,11 +51,10 @@ class CoinGeckoRepo:
             temp_df.set_index('date', inplace=True)
             temp_df.sort_index(ascending=True, inplace=True)
             temp_df['date'] = temp_df.index
-            print(temp_df)
             if self.from_date:
                 temp_df = temp_df.loc[self.from_date:]
             if self.to_date:
-                temp_df = temp_df.loc[:self.to_date]
+                temp_df = temp_df.loc[:'{} 23:59'.format(self.to_date)]
             temp_df = temp_df[['date', 'marketcap']]
             return SelectorReference.from_dict(temp_df.to_dict('list'), self.symbol)
         else:
