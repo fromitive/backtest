@@ -1,17 +1,23 @@
-from backtest.repository.finance.finance_repo import FinanceRepo
-from backtest.domains.strategy import StockData
-from backtest.domains.strategy import Strategy
-from backtest.domains.strategy_result import StrategyResult, StrategyResultColumnType
+import pandas as pd
+
 from backtest.domains.backtest import Backtest
+from backtest.domains.strategy import StockData, Strategy
+from backtest.domains.strategy_result import (StrategyResult,
+                                              StrategyResultColumnType)
+from backtest.repository.finance.finance_repo import FinanceRepo
+from backtest.repository.webrepo.binance_repo import BinanceRepo
 from backtest.repository.webrepo.bithumb_repo import BithumbRepo
 from backtest.repository.webrepo.upbit_repo import UpbitRepo
-from backtest.repository.webrepo.binance_repo import BinanceRepo
-from backtest.use_cases.stockdata_from_repo import stockdata_from_repo
-from backtest.request.stockdata_from_repo import build_stock_data_from_repo_request
-from backtest.use_cases.strategy_execute import sma_function, sma_big_stock_function, greed_fear_index_function, rsi_function, rsi_big_stock_function
+from backtest.request.stockdata_from_repo import \
+    build_stock_data_from_repo_request
 from backtest.use_cases.backtest_execute import backtest_execute
+from backtest.use_cases.stockdata_from_repo import stockdata_from_repo
+from backtest.use_cases.strategy_execute import (greed_fear_index_function,
+                                                 rsi_big_stock_function,
+                                                 rsi_function,
+                                                 sma_big_stock_function,
+                                                 sma_function)
 from backtest.util.stockdata_util import get_greed_fear_index
-import pandas as pd
 
 request = build_stock_data_from_repo_request(
     filters={'order__eq': 'ALGO', 'from__eq': '2019-01-01'})
