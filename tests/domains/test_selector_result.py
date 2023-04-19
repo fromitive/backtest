@@ -1,6 +1,8 @@
-import pytest
 import pandas as pd
-from backtest.domains.selector_result import SelectorResult, SelectorResultColumnType
+import pytest
+
+from backtest.domains.selector_result import (SelectorResult,
+                                              SelectorResultColumnType)
 
 
 @pytest.fixture(scope='function')
@@ -22,7 +24,7 @@ def dict_selector_result2():
                           (SelectorResultColumnType.KEEP, 100),
                           (SelectorResultColumnType.SELECT, 100),
                           (SelectorResultColumnType.KEEP, 100),
-                          (SelectorResultColumnType.SELECT, 100),]}
+                          (SelectorResultColumnType.SELECT, 100), ]}
 
 
 @pytest.fixture(scope='function')
@@ -30,7 +32,7 @@ def selector_result_dataframe(dict_selector_result1):
     df = pd.DataFrame(dict_selector_result1,
                       columns=['name', 'date'])
     df.set_index('date', inplace=True)
-    df.index = pd.to_datetime(df.index)
+    df.index = pd.to_datetime(df.index, format='mixed')
     return df
 
 

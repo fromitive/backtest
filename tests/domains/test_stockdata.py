@@ -1,17 +1,18 @@
 import pandas as pd
-from backtest.domains.stockdata import StockData
 from pandas import DatetimeIndex
+
+from backtest.domains.stockdata import StockData
 
 
 def test_init_stockdata_without_parameters():
     sto = StockData()
     assert sto.symbol == ''
-    #assert list(sto.data.columns) == ['open',
+    # assert list(sto.data.columns) == ['open',
     #                                  'high',
     #                                  'low',
     #                                  'close',
     #                                  'volume']
-    #assert isinstance(sto.data.index, DatetimeIndex)
+    # assert isinstance(sto.data.index, DatetimeIndex)
 
 
 def test_init_stockdate_with_parameters():

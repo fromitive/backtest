@@ -1,6 +1,7 @@
 import dataclasses
-import pandas as pd
 from enum import Enum
+
+import pandas as pd
 
 
 class SelectorResultColumnType(Enum):
@@ -17,7 +18,7 @@ class SelectorResult:
         df = pd.DataFrame(adict,
                           columns=[item for item in adict.keys()])
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index)
+        df.index = pd.to_datetime(df.index, format='mixed')
         return cls(value=df)
 
     def __len__(self):

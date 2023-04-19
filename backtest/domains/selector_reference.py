@@ -1,4 +1,5 @@
 import dataclasses
+
 import pandas as pd
 
 
@@ -12,7 +13,7 @@ class SelectorReference:
         df = pd.DataFrame(dict_data)
         df.drop_duplicates(inplace=True)
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index).normalize()
+        df.index = pd.to_datetime(df.index, format='mixed').normalize()
         if len(type_options):
             df = df.astype(type_options)
         else:
