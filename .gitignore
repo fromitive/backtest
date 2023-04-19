@@ -4,3 +4,4 @@ env
 __pycache__
 .ipynb_checkpoints
 *.csv
+!backtest/csvrepo/*.csv
