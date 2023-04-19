@@ -4,3 +4,4 @@ numpy
 stockstats
 finance-datareader
 matplotlib
+bs4
