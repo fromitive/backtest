@@ -1,5 +1,4 @@
 {
-    "python.formatting.provider": "flake8",
     "python.linting.flake8Enabled": true,
     "python.linting.enabled": true,
     "editor.formatOnSave": true,
@@ -8,5 +7,15 @@
     },
     "python.linting.flake8Args": [
         "--ignore=E501",
+    ],
+    "cSpell.words": [
+        "adict",
+        "backtest",
+        "stockdata",
+        "astype",
+        "dataframe",
+        "iloc",
+        "marketcap",
+        "stockdate",
     ],
 }
