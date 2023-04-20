@@ -10,7 +10,7 @@ def batch_bithumb_symbol_to_geckco_id():
     symbol_list = list(res.keys())[:-1]
     symbol_list_len = len(symbol_list)
 
-    for idx, symbol in enumerate(symbol_list):
+    for idx, symbol in enumerate(symbol_list, start=1):
         print("[+] GET bithumb symbol id : {} {}/{}".format(symbol,
               idx, symbol_list_len))
         get_coingecko_symbol_id(symbol)
@@ -23,10 +23,11 @@ def batch_upbit_symbol_to_geckco_id():
                    for symbol in res if symbol['market'].split('-')[0] == 'KRW']
     symbol_list_len = len(symbol_list)
 
-    for idx, symbol in enumerate(symbol_list):
+    for idx, symbol in enumerate(symbol_list, start=1):
         print("[+] GET upbit symbol id : {} {}/{}".format(symbol,
               idx, symbol_list_len))
         get_coingecko_symbol_id(symbol)
 
 
+batch_bithumb_symbol_to_geckco_id()
 batch_upbit_symbol_to_geckco_id()
