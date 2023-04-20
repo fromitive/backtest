@@ -59,3 +59,6 @@ class CoinGeckoRepo:
             return SelectorReference.from_dict(temp_df.to_dict('list'), self.symbol)
         else:
             raise Exception('request error', response.status_code)
+
+    def __name__(self):
+        return 'coingeckorepo'

@@ -21,6 +21,22 @@ class SelectorReference:
         df.sort_index(ascending=True, inplace=True)
         return cls(symbol=symbol, data=df)
 
+    @classmethod
+    def from_csv(cls, csv_path, symbol='', type_options: dict = {}):
+        df = pd.read_csv(csv_path)
+        df.drop_duplicates(inplace=True)
+        df.set_index('date', inplace=True)
+        df.index = pd.to_datetime(df.index, dayfirst=True).normalize()
+        if len(type_options):
+            df = df.astype(type_options)
+        else:
+            df = df.astype(float)
+        df.sort_index(ascending=True, inplace=True)
+        return cls(symbol=symbol, data=df)
+
+    def to_csv(self, csv_path):
+        self.data.to_csv(csv_path)
+
     def __len__(self):
         return len(self.data)
 
@@ -30,3 +46,6 @@ class SelectorReference:
         else:
             self.data.add(self.data, fill_value=0.0)
         return self
+
+    def __name__(self):
+        return 'selector_reference'
