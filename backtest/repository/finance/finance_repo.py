@@ -21,5 +21,6 @@ class FinanceRepo:
         temp_df = fdr.DataReader(self.order_currency, self.from_date, self.to_date)
         temp_df.rename(columns={'Open': 'open', 'High': 'high',
                                 'Low': 'low', 'Close': 'close', 'Volume': 'volume'}, inplace=True)
+        temp_df.index.name = 'date'
         temp_df = temp_df[['open', 'high', 'low', 'close', 'volume']]
         return StockData(symbol=self.order_currency, data=temp_df)
