@@ -1,7 +1,4 @@
-from enum import Enum
 import dataclasses
-import pandas as pd
-from backtest.domains.stockdata import StockData
 import typing
 
 
@@ -11,5 +8,5 @@ class Strategy:
     function: typing.Callable = None
     weight: int = 0
     target: str = 'ALL'
-    after : bool = False
+    after: bool = False
     options: dict = dataclasses.field(default_factory=dict)

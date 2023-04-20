@@ -1,7 +1,8 @@
+from datetime import datetime
 from typing import List
+
 from backtest.domains.stockdata import StockData
 from backtest.util.stockdata_util import generate_empty_stockData
-from datetime import datetime
 
 
 def standardize_stock(stockdata_list: List[StockData]):

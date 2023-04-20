@@ -1,10 +1,7 @@
-from backtest.request.stockdata_from_repo import StockDataFromRepoValidRequest, StockDataFromRepoInvalidRequest
-from backtest.response import (
-    ResponseFailure,
-    ResponseSuccess,
-    ResponseTypes,
-    build_response_from_invalid_request
-)
+from backtest.request.stockdata_from_repo import (
+    StockDataFromRepoInvalidRequest, StockDataFromRepoValidRequest)
+from backtest.response import (ResponseFailure, ResponseSuccess, ResponseTypes,
+                               build_response_from_invalid_request)
 
 
 def stockdata_from_repo(repo, request):

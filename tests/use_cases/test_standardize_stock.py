@@ -1,6 +1,7 @@
+from datetime import datetime
+
 from backtest.use_cases.standardize_stock import standardize_stock
 from backtest.util.stockdata_util import generate_empty_stockData
-from datetime import datetime
 
 
 def test_standardize_stock():
