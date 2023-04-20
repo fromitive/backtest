@@ -1,8 +1,9 @@
-import requests
-import pandas as pd
 import time
-from datetime import datetime, timedelta
+
+import requests
+
 from backtest.domains.stockdata import StockData
+from backtest.module_compet.pandas import pd
 
 
 class BithumbRepo:
@@ -41,7 +42,7 @@ class BithumbRepo:
                 dict_data, columns=['time', 'open', 'close',
                                     'high', 'low', 'volume'])
             temp_df['date'] = temp_df['time'].apply(
-                lambda x: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x/1000)))
+                lambda x: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x / 1000)))
             temp_df.set_index('date', inplace=True)
             temp_df.sort_index(ascending=True, inplace=True)
             temp_df['date'] = temp_df.index

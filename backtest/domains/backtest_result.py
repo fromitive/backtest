@@ -1,7 +1,7 @@
 
 import dataclasses
 
-import pandas as pd
+from backtest.module_compet.pandas import pd
 
 
 @dataclasses.dataclass
@@ -13,5 +13,5 @@ class BacktestResult:
         df = pd.DataFrame(adict,
                           columns=['stock_bucket', 'total_profit', 'total_potential_profit', 'total_stock_count', 'stock_count', 'date'])
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index, dayfirst=True)
+        df.index = pd.to_datetime(df.index)
         return cls(value=df)

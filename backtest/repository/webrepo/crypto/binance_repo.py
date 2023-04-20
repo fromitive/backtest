@@ -1,9 +1,10 @@
-import requests
-import pandas as pd
-import numpy as np
 import time
 from datetime import datetime, timedelta
+
+import requests
+
 from backtest.domains.stockdata import StockData
+from backtest.module_compet.pandas import pd
 
 
 class BinanceRepo:
@@ -97,7 +98,7 @@ class BinanceRepo:
                    'qav', 'num_trades', 'taker_base_vol', 'taker_quote_vol', 'ignore']
         temp_df = pd.DataFrame(temp_list, columns=columns)
         temp_df['date'] = temp_df['open_time'].apply(
-            lambda x: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x/1000)))
+            lambda x: time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(x / 1000)))
         usecols = ['date', 'open', 'high', 'low', 'close', 'volume']
         temp_df = temp_df[usecols]
         return StockData.from_dict(temp_df.to_dict('list'), symbol=self.order_currency)

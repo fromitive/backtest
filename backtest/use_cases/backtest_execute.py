@@ -1,18 +1,18 @@
-from backtest.domains.backtest import Backtest
-from backtest.domains.backtest_result import BacktestResult
-from backtest.domains.strategy import Strategy
-from backtest.domains.strategy import StockData
-from backtest.domains.strategy_result import StrategyResultColumnType
-from backtest.use_cases.strategy_execute import strategy_execute
-from backtest.use_cases.standardize_stock import standardize_stock
-from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
+import os
+import sys
 from typing import List
 
-import pandas as pd
 import numpy as np
-import math
-import sys
-import os
+
+from backtest.domains.backtest import Backtest
+from backtest.domains.backtest_result import BacktestResult
+from backtest.domains.stockdata import StockData
+from backtest.domains.strategy import Strategy
+from backtest.domains.strategy_result import StrategyResultColumnType
+from backtest.module_compet.pandas import pd
+from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
+from backtest.use_cases.standardize_stock import standardize_stock
+from backtest.use_cases.strategy_execute import strategy_execute
 
 
 def _sum_strategy(series: pd.Series, stockdata: StockData):
@@ -40,7 +40,7 @@ def _calc_stock_count(stock_bucket):
 def _recalc_profit(backtest_result: pd.Series, max_bucket_cnt: int, column_name: str):
     profit = backtest_result[column_name]
     bucket_cnt = 0
-    if backtest_result['shift_stock_bucket'] != None:
+    if backtest_result['shift_stock_bucket'] is not None:
         for symbol in backtest_result['shift_stock_bucket']:
             bucket_cnt += backtest_result['shift_stock_bucket'][symbol]
     return profit * (bucket_cnt / max_bucket_cnt)
@@ -89,8 +89,9 @@ def backtest_execute(backtest: Backtest):
         # divide pre, post strategy list
         pre_strategy_list = [
             strategy for strategy in backtest.strategy_list if not strategy.after]
-        post_strategy_list = [
-            strategy for strategy in backtest.strategy_list if strategy.after]
+        # future : to apply post_strategy_list
+        # post_strategy_list = [
+        #     strategy for strategy in backtest.strategy_list if strategy.after]
 
         # init backtest_result
         backtest_result_raw = pd.DataFrame(
@@ -98,8 +99,7 @@ def backtest_execute(backtest: Backtest):
         backtest_result_raw['total_profit'] = 0.0
         backtest_result_raw['stock_bucket'] = np.nan
         backtest_result_raw['stock_bucket'].astype('object')
-        backtest_result_raw.at[backtest_result_raw.index[0],
-                            'stock_bucket'] = 'DUMMY'
+        backtest_result_raw.at[backtest_result_raw.index[0], 'stock_bucket'] = 'DUMMY'
         backtest_result_raw['total_potential_profit'] = 0.0
 
         # loop base_index
@@ -125,8 +125,8 @@ def backtest_execute(backtest: Backtest):
                     profit_earn = stockdata_dict[symbol].data['close'][index] - \
                         stockdata_dict[symbol].data['close'][profit_index]
                     profit_base = stockdata_dict[symbol].data['close'][profit_index]
-                    symbol_profit += ((profit_earn /
-                                    profit_base) / bucket_cnt) / stockdata_cnt
+                    symbol_profit += ((profit_earn / profit_base) /
+                                      bucket_cnt) / stockdata_cnt
                 stock_profit_dict[symbol] = symbol_profit
                 total_potential_profit += symbol_profit
 
@@ -137,10 +137,9 @@ def backtest_execute(backtest: Backtest):
                         bucket_cnt -= len(stock_bucket_dict[symbol])
                         stock_bucket_dict[symbol] = []
                         backtest_result_raw.at[index,
-                                            'total_profit'] += stock_profit_dict[symbol]
+                                               'total_profit'] += stock_profit_dict[symbol]
                         total_potential_profit -= stock_profit_dict[symbol]
-            backtest_result_raw.at[index,
-                                'total_potential_profit'] = total_potential_profit
+            backtest_result_raw.at[index, 'total_potential_profit'] = total_potential_profit
 
             # TODO: post_strategy_execute
             backtest_result_raw.at[index, 'stock_bucket'] = _calc_stock_count(

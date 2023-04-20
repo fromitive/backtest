@@ -1,5 +1,5 @@
-from collections.abc import Mapping
 import datetime
+from collections.abc import Mapping
 
 
 class SelectorReferenceFromRepoInvalidRequest:
@@ -57,7 +57,7 @@ def build_selector_reference_from_repo_request(filters=None):
                     if datetime.datetime.strptime(value, "%Y-%m-%d") > datetime.datetime.now():
                         invalid_req.add_error(
                             "filters", "Key {} - value not accepted future date".format(
-                                key, value)
+                                key)
                         )
         if invalid_req.has_errors():
             return invalid_req

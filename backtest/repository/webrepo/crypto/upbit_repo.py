@@ -1,10 +1,10 @@
 import time
 from datetime import datetime, timedelta
 
-import pandas as pd
 import requests
 
 from backtest.domains.stockdata import StockData
+from backtest.module_compet.pandas import pd
 
 
 class UpbitRepo:

@@ -1,10 +1,11 @@
-from backtest.domains.strategy import Strategy
-from backtest.domains.stockdata import StockData
-from backtest.domains.strategy_result import StrategyResult, StrategyResultColumnType
-from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
-from backtest.util.stockdata_util import get_greed_fear_index
 from typing import List
-import pandas as pd
+
+from backtest.domains.stockdata import StockData
+from backtest.domains.strategy import Strategy
+from backtest.domains.strategy_result import (StrategyResult,
+                                              StrategyResultColumnType)
+from backtest.module_compet.pandas import pd
+from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
 
 
 def basic_function(data: StockData, weight: int, name: str):

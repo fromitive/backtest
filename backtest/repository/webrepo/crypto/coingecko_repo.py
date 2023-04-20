@@ -1,11 +1,11 @@
 # coingeckco repo - return SelectorReference
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 
-import pandas as pd
 import requests
 
 from backtest.domains.selector_reference import SelectorReference
+from backtest.module_compet.pandas import pd
 from backtest.util.selector_reference_util import get_coingecko_symbol_id
 
 

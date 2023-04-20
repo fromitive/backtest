@@ -1,11 +1,15 @@
-from backtest.use_cases.strategy_execute import strategy_execute, basic_function
-from backtest.domains.strategy import Strategy
-from backtest.domains.strategy_result import StrategyResult, StrategyResultColumnType
-from backtest.domains.stockdata import StockData
-from backtest.response import ResponseSuccess, ResponseFailure
-import pytest
-import pandas as pd
 from unittest import mock
+
+import pytest
+
+from backtest.domains.stockdata import StockData
+from backtest.domains.strategy import Strategy
+from backtest.domains.strategy_result import (StrategyResult,
+                                              StrategyResultColumnType)
+from backtest.module_compet.pandas import pd
+from backtest.response import ResponseSuccess
+from backtest.use_cases.strategy_execute import (basic_function,
+                                                 strategy_execute)
 
 
 @pytest.fixture(scope='function')

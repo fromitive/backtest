@@ -1,14 +1,17 @@
-from backtest.use_cases.backtest_execute import backtest_execute
-from backtest.use_cases.backtest_execute import _generate_strategy_execute_result
-from backtest.domains.backtest import Backtest
-from backtest.domains.strategy import Strategy
-from backtest.domains.stockdata import StockData
-from backtest.domains.backtest_result import BacktestResult
-from backtest.domains.strategy_result import StrategyResult, StrategyResultColumnType
-from backtest.response import ResponseSuccess
-import pytest
-import pandas as pd
 from unittest import mock
+
+import pytest
+
+from backtest.domains.backtest import Backtest
+from backtest.domains.backtest_result import BacktestResult
+from backtest.domains.stockdata import StockData
+from backtest.domains.strategy import Strategy
+from backtest.domains.strategy_result import (StrategyResult,
+                                              StrategyResultColumnType)
+from backtest.module_compet.pandas import pd
+from backtest.response import ResponseSuccess
+from backtest.use_cases.backtest_execute import (
+    _generate_strategy_execute_result, backtest_execute)
 
 
 @pytest.fixture(scope='function')
@@ -75,7 +78,7 @@ def strategy_result_data():
                             (StrategyResultColumnType.BUY, 100),
                             (StrategyResultColumnType.SELL, 100),
                             (StrategyResultColumnType.SELL, 100),
-                            (StrategyResultColumnType.BUY, 100),]}
+                            (StrategyResultColumnType.BUY, 100)]}
     return StrategyResult.from_dict(sample_dict, target='ALL')
 
 
@@ -89,7 +92,7 @@ def test_backtest_execute_without_options(strategy_execute_result, strategy_list
     response = backtest_execute(backtest)
     assert isinstance(response, ResponseSuccess)
     assert isinstance(response.value, BacktestResult)
-    assert bool(response) == True
+    assert bool(response) is True
     backtest_result = response.value
     assert isinstance(backtest_result, BacktestResult)
     assert isinstance(backtest_result.value, pd.DataFrame)

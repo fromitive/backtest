@@ -1,6 +1,6 @@
 import dataclasses
 
-import pandas as pd
+from backtest.module_compet.pandas import pd
 
 
 @dataclasses.dataclass

@@ -1,9 +1,10 @@
-from backtest.domains.stockdata import StockData
-from datetime import datetime
-import requests
 import json
-import pandas as pd
-import pandas as pd
+from datetime import datetime
+
+import requests
+
+from backtest.domains.stockdata import StockData
+from backtest.module_compet.pandas import pd
 
 
 def generate_empty_stockData(from_date, to_date=datetime.now().strftime('%Y-%m-%d'), symbol=''):

@@ -1,7 +1,7 @@
 import dataclasses
 from enum import Enum
 
-import pandas as pd
+from backtest.module_compet.pandas import pd
 
 
 class SelectorResultColumnType(Enum):
