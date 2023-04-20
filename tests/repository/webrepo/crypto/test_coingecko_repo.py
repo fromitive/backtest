@@ -1,9 +1,9 @@
 from unittest import mock
 
-import pandas as pd
 import pytest
 
 from backtest.domains.selector_reference import SelectorReference
+from backtest.module_compet.pandas import pd
 from backtest.repository.webrepo.crypto.coingecko_repo import CoinGeckoRepo
 
 

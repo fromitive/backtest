@@ -1,8 +1,10 @@
-import pytest
-import pandas as pd
-from backtest.repository.webrepo.crypto.binance_repo import BinanceRepo
-from backtest.domains.stockdata import StockData
 from unittest import mock
+
+import pytest
+
+from backtest.domains.stockdata import StockData
+from backtest.module_compet.pandas import pd
+from backtest.repository.webrepo.crypto.binance_repo import BinanceRepo
 
 
 @pytest.fixture(scope='function')

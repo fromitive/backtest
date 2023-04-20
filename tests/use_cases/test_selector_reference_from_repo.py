@@ -1,10 +1,10 @@
 from datetime import datetime
 from unittest import mock
 
-import pandas as pd
 import pytest
 
 from backtest.domains.selector_reference import SelectorReference
+from backtest.module_compet.pandas import pd
 from backtest.request.selector_reference_from_repo import \
     build_selector_reference_from_repo_request
 from backtest.use_cases.selector_reference_from_repo import \
