@@ -19,7 +19,8 @@ def get_greed_fear_index():
     result = json.loads(rsp.text)
     df = pd.DataFrame(result['data'])
     df['value'] = df['value'].astype('int')
-    df['date'] = pd.to_datetime(df['timestamp'], unit='s')
+    df['timestamp'] = df['timestamp'].astype('int')
+    df['date'] = pd.to_datetime(df['timestamp'])
     df.set_index('date', inplace=True)
     df = df[['value', 'value_classification']]
     df.astype({'value': 'int'})
