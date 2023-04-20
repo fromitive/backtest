@@ -1,5 +1,7 @@
+from datetime import datetime
 from unittest import mock
 
+import pandas as pd
 import pytest
 
 from backtest.domains.selector_reference import SelectorReference
@@ -14,8 +16,20 @@ def sample_empty_selector_reference():
     return SelectorReference(symbol='TEST')
 
 
+@pytest.fixture(scope='function')
+def dict_selector_reference():
+    return {'date': ['2022-10-11', '2022-11-11'],
+            'dummy': [1.1, 2.2],
+            'dummy2': ['11', '22']}
+
+
+@pytest.fixture(scope='function')
+def dataframe_reference(dict_selector_reference):
+    return pd.DataFrame(dict_selector_reference)
+
+
 def test_selector_reference_from_repo(sample_empty_selector_reference):
-    repo = mock.Mock()
+    repo = mock.Mock(spec_set=["__name__", "get"])
     repo.get.return_value = sample_empty_selector_reference
     request = build_selector_reference_from_repo_request()
     response = selector_reference_from_repo(repo, request)
@@ -24,18 +38,36 @@ def test_selector_reference_from_repo(sample_empty_selector_reference):
     assert response.value == sample_empty_selector_reference
 
 
-def test_selector_reference_from_repo_with_cache_enable(sample_empty_selector_reference):
-    repo = mock.Mock()
+@mock.patch('os.makedirs')
+@mock.patch('pandas.read_csv')
+@mock.patch('pandas.DataFrame.to_csv')
+def test_selector_reference_from_repo_with_cache_enable(to_csv_result, read_csv_result, os_makedirs, sample_empty_selector_reference, dataframe_reference):
+    os_makedirs.return_value = None
+    to_csv_result.return_value = None
+    read_csv_result.return_value = dataframe_reference
+    SELECTOR_REFERENCE_CSVREPO_DIR_PATH = 'backtest/csvrepo/selector_reference'
+    str_today = datetime.strftime(datetime.now(), "%Y-%m-%d")
+    repo = mock.Mock(spec_set=["__name__", "get"])
     repo.get.return_value = sample_empty_selector_reference
-    request = build_selector_reference_from_repo_request()
+    request = build_selector_reference_from_repo_request(
+        filters={'symbol__eq': 'ETH', 'from__eq': '2019-09-01'})
     response = selector_reference_from_repo(repo, request, cache=True)
-    repo.get.assert_called_with(filters=None)
+
+    repo.get.assert_called_with(
+        filters={'symbol__eq': 'ETH', 'from__eq': '2019-09-01'})
+    to_csv_result.assert_called_with(
+        '{}/{}_ETH_2019-09-01_{}.csv'.format(SELECTOR_REFERENCE_CSVREPO_DIR_PATH, type(repo).__name__, str_today))
+    read_csv_result.assert_called_with(
+        '{}/{}_ETH_2019-09-01_{}.csv'.format(SELECTOR_REFERENCE_CSVREPO_DIR_PATH, type(repo).__name__, str_today))
+    os_makedirs.assert_called_with(
+        SELECTOR_REFERENCE_CSVREPO_DIR_PATH, exist_ok=True)
+
     assert bool(response) is True
     assert response.value == sample_empty_selector_reference
 
 
 def test_selector_reference_from_invalied_request_repo(sample_empty_selector_reference):
-    repo = mock.Mock()
+    repo = mock.Mock(spec_set=["__name__", "get"])
     repo.get.return_value = sample_empty_selector_reference
     request = None
     response = selector_reference_from_repo(repo, request=request)
