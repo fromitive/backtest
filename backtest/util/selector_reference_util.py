@@ -1,10 +1,13 @@
 import os.path
 import re
+from datetime import datetime
 
 import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import RequestException
+
+from backtest.domains.selector_reference import SelectorReference
 
 CSV_REPO_PATH = 'backtest/csvrepo'
 GECKO_CSV_PATH = 'coingecko_symbol.csv'
@@ -12,6 +15,12 @@ GECKO_SYMBOL_ID_LOOKUP_URL = 'https://www.coingecko.com/en/coins/{id}'
 GECKO_COIN_LIST_CSV_PATH = 'coingecko_coin_list.csv'
 GECKO_COIN_LIST_API_URL = 'https://api.coingecko.com/api/v3/coins/list'
 REGEX_COIN_IMAGE_URL = r'https://assets.coingecko.com/coins/images/(\d+)/.*'
+
+
+def generate_empty_selector_reference(from_date, to_date=datetime.now().strftime('%Y-%m-%d'), symbol='', columns=[]):
+    date_series = pd.date_range(from_date, to_date)
+    df = pd.DataFrame(columns=columns, index=date_series).fillna(0)
+    return SelectorReference(symbol=symbol, data=df)
 
 
 def _search_coingecko_symbol_id(symbol):
