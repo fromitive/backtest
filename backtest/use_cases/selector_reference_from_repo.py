@@ -32,7 +32,9 @@ def selector_reference_from_repo(repo, request, cache=False):
         repo_name=repo_name, symbol=symbol, from_date=from_date, to_date=to_date)
     if cache:
         try:
-            selector_reference = SelectorReference.from_csv(CSV_PATH)
+            selector_reference = SelectorReference.from_csv(
+                CSV_PATH, symbol=symbol)
+            return ResponseSuccess(selector_reference)
         except FileNotFoundError:
             pass
     try:
