@@ -31,6 +31,7 @@ def _search_coingecko_symbol_id(symbol):
         symbol_id = coin_symbol_id_table.loc[symbol.lower()]['id']
         if not isinstance(symbol_id, str):
             symbol_id = symbol_id[0]
+            print('dup symbol symbol_id is :{} SYMBOL : {}'.format(symbol_id, symbol))
         res = requests.get(GECKO_SYMBOL_ID_LOOKUP_URL.format(id=symbol_id))
         if res.status_code == 200:
             soup = BeautifulSoup(res.text, features='lxml')
