@@ -1,5 +1,6 @@
 import dataclasses
 
+import numpy as np
 import pandas as pd
 
 
@@ -41,10 +42,20 @@ class SelectorReference:
         return len(self.data)
 
     def __add__(self, o):
-        if self.data.index[0] > o.data.index[0]:
-            self.data = o.data.add(self.data, fill_value=0.0)
+        if self.data.index[0] > o.data.index[0] or len(self.data.index) < len(o.data.index):
+            self.data = o.data.add(self.data)
         else:
-            self.data.add(self.data, fill_value=0.0)
+            self.data.add(self.data)
+        df = self.data
+        # drop duplicate value
+        df = df.reset_index()
+        df = df.drop_duplicates(subset='index', keep='first')
+        df = df.set_index('index')
+        df = df.rename_axis('date')
+        # fill missing date value with mean value
+        df = df.interpolate()
+        df = df.fillna(0.0)
+        self.data = df
         return self
 
     def __name__(self):
