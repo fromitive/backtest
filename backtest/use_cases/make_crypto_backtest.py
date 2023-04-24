@@ -14,6 +14,8 @@ from backtest.use_cases.selector_reference_from_repo import \
 from backtest.use_cases.standardize_selector_reference import \
     standardize_selector_reference
 
+SELECTOR_REFERENCE_CSV_REPO_PATH = "backtest/csvrepo/selector_reference/{repo_name}_{symbol}_{from_date}_{to_date}.csv"
+SELECTOR_REFERENCE_CSV_REPO_DIR_PATH = "backtest/csvrepo/selector_reference"
 
 class MarketType(Enum):
     BITHUMB = 1
@@ -36,7 +38,7 @@ def get_upbit_symbol():
     return symbol_list
 
 
-def make_crypto_selector_reference_makretcap(market: MarketType, from_date: str = '', to_date: str = '') -> ResponseSuccess | ResponseFailure:
+def make_crypto_selector_reference_makretcap(market: MarketType, from_date: str = '', to_date: str = '', cache: bool = False) -> ResponseSuccess | ResponseFailure:
     str_today = datetime.strftime(datetime.now(), "%Y-%m-%d")
     str_symbol = ''
     if from_date == '':
@@ -52,6 +54,18 @@ def make_crypto_selector_reference_makretcap(market: MarketType, from_date: str 
         str_symbol = 'UPBIT'
     else:
         return ResponseFailure(type_=ResponseTypes.SYSTEM_ERROR, message='market not supported value = {}'.format(market))
+
+    CSV_PATH = SELECTOR_REFERENCE_CSV_REPO_PATH.format(
+        repo_name='CoinGeckoRepo', symbol=str_symbol, from_date=from_date, to_date=to_date)
+
+    if cache:
+        try:
+            selector_reference = SelectorReference.from_csv(
+                CSV_PATH, symbol=str_symbol)
+            return ResponseSuccess(selector_reference)
+        except FileNotFoundError:
+            pass
+
     symbol_list = get_symbol_function()
     # get selector_reference_list
     selector_reference_list = []
@@ -61,16 +75,19 @@ def make_crypto_selector_reference_makretcap(market: MarketType, from_date: str 
         request = build_selector_reference_from_repo_request(
             filters={'symbol__eq': symbol, 'from__eq': from_date, 'to__eq': to_date})
         response = selector_reference_from_repo(
-            CoinGeckoRepo(), request=request, cache=True)
+            CoinGeckoRepo(), request=request, cache=cache)
         if isinstance(response, ResponseFailure):
             return ResponseFailure(type_=ResponseTypes.SYSTEM_ERROR, message='symbol : {} fail to load from coingecko repository'.format(symbol))
         else:  # ResponseSuccess
             selector_reference_list.append(response.value)
-    standardize_selector_reference(selector_reference_list)
+    standardize_selector_reference(
+        selector_reference_list, to_date=to_date)
     selector_reference_data = pd.DataFrame(
         index=selector_reference_list[0].data.index, columns=symbol_list)
     for selector_reference in selector_reference_list:
         selector_reference_data[selector_reference.symbol] = selector_reference.data['marketcap']
     total_selector_reference = SelectorReference(
         symbol=str_symbol, data=selector_reference_data)
+    if cache:
+        total_selector_reference.to_csv(CSV_PATH)
     return ResponseSuccess(total_selector_reference)
