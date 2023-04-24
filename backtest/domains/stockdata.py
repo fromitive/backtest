@@ -45,9 +45,8 @@ class StockData:
         df = self.data
         # drop duplicate value
         df = df.reset_index()
-        df = df.drop_duplicates(subset='index', keep='first')
-        df = df.set_index('index')
-        df = df.rename_axis('date')
+        df = df.drop_duplicates(subset='date', keep='first')
+        df = df.set_index('date')
         # fill missing date value with mean value
         df = df.interpolate()
         df = df.fillna(0.0)
