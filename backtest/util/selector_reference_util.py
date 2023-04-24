@@ -17,7 +17,7 @@ GECKO_COIN_LIST_API_URL = 'https://api.coingecko.com/api/v3/coins/list'
 REGEX_COIN_IMAGE_URL = r'https://assets.coingecko.com/coins/images/(\d+)/.*'
 
 
-def generate_empty_selector_reference(from_date, to_date=datetime.now().strftime('%Y-%m-%d'), symbol='', columns=[]):
+def generate_empty_selector_reference(from_date='1999-01-01', to_date=datetime.now().strftime('%Y-%m-%d'), symbol='', columns=[]):
     date_series = pd.date_range(from_date, to_date)
     df = pd.DataFrame(columns=columns, index=date_series).fillna(0)
     df = df.rename_axis('date')
