@@ -38,6 +38,7 @@ def get_upbit_symbol():
 
 def make_crypto_selector_reference_makretcap(market: MarketType, from_date: str = '', to_date: str = '') -> ResponseSuccess | ResponseFailure:
     str_today = datetime.strftime(datetime.now(), "%Y-%m-%d")
+    str_symbol = ''
     if from_date == '':
         from_date = '1999-01-01'
     if to_date == '':
@@ -45,14 +46,18 @@ def make_crypto_selector_reference_makretcap(market: MarketType, from_date: str 
     get_symbol_function = None
     if market == MarketType.BITHUMB:
         get_symbol_function = get_bithumb_symbol
+        str_symbol = 'BITHUMB'
     elif market == MarketType.UPBIT:
         get_symbol_function = get_upbit_symbol
+        str_symbol = 'UPBIT'
     else:
         return ResponseFailure(type_=ResponseTypes.SYSTEM_ERROR, message='market not supported value = {}'.format(market))
     symbol_list = get_symbol_function()
     # get selector_reference_list
     selector_reference_list = []
-    for symbol in symbol_list:
+    for idx, symbol in enumerate(symbol_list, start=1):
+        print('make selector reference {symbol} {idx}/{len_symbol_list}'.format(
+            symbol=symbol, idx=idx, len_symbol_list=len(symbol_list)))
         request = build_selector_reference_from_repo_request(
             filters={'symbol__eq': symbol, 'from__eq': from_date, 'to__eq': to_date})
         response = selector_reference_from_repo(
@@ -61,7 +66,11 @@ def make_crypto_selector_reference_makretcap(market: MarketType, from_date: str 
             return ResponseFailure(type_=ResponseTypes.SYSTEM_ERROR, message='symbol : {} fail to load from coingecko repository'.format(symbol))
         else:  # ResponseSuccess
             selector_reference_list.append(response.value)
-
     standardize_selector_reference(selector_reference_list)
-
-    return ResponseSuccess(SelectorReference(symbol='BITHUMB', data=pd.DataFrame(columns=symbol_list)))
+    selector_reference_data = pd.DataFrame(
+        index=selector_reference_list[0].data.index, columns=symbol_list)
+    for selector_reference in selector_reference_list:
+        selector_reference_data[selector_reference.symbol] = selector_reference.data['marketcap']
+    total_selector_reference = SelectorReference(
+        symbol=str_symbol, data=selector_reference_data)
+    return ResponseSuccess(total_selector_reference)
