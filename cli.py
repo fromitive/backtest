@@ -1,13 +1,12 @@
 import pandas as pd
 
 from backtest.domains.backtest import Backtest
-from backtest.domains.strategy import StockData, Strategy
+from backtest.domains.strategy import Strategy
 from backtest.domains.strategy_result import (StrategyResult,
                                               StrategyResultColumnType)
 from backtest.repository.finance.finance_repo import FinanceRepo
-from backtest.repository.webrepo.binance_repo import BinanceRepo
-from backtest.repository.webrepo.bithumb_repo import BithumbRepo
-from backtest.repository.webrepo.upbit_repo import UpbitRepo
+from backtest.repository.webrepo.crypto.bithumb_repo import BithumbRepo
+from backtest.repository.webrepo.crypto.upbit_repo import UpbitRepo
 from backtest.request.stockdata_from_repo import \
     build_stock_data_from_repo_request
 from backtest.use_cases.backtest_execute import backtest_execute
