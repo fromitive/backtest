@@ -9,9 +9,9 @@ from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
 
 
 def basic_function(data: StockData, weight: int, name: str):
-    response = StrategyResult(value=pd.DataFrame(
-        index=data.data.index, columns=[name]))
-    response.value[name] = [(
+    response = pd.DataFrame(
+        index=data.data.index, columns=[name])
+    response[name] = [(
         StrategyResultColumnType.KEEP, weight)] * len(data)
     return response
 
@@ -48,46 +48,50 @@ def _dataframe_sma_multi(df: pd.DataFrame, weight: int, rolling_list: List[int])
 
 
 def sma_function(data: StockData, weight: int, name: str, rolling=100):
-    response = StrategyResult(value=pd.DataFrame(
-        index=data.data.index, columns=[name]))
+    response = pd.DataFrame(
+        index=data.data.index, columns=[name])
     """
     strategyfunction here
     """
-    response.value[name] = _dataframe_sma(data.data, weight, rolling)['result']
-    return response
+    response = _dataframe_sma(data.data, weight, rolling)
+    response = response.rename({'result': name}, axis=1)
+    return response[[name]]
 
 
 def sma_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, rolling=100):
-    response = StrategyResult(value=pd.DataFrame(
-        index=data.data.index, columns=[name]))
+    response = pd.DataFrame(
+        index=data.data.index, columns=[name])
     """
     strategyfunction here
     """
-    response.value[name] = _dataframe_sma(
-        big_stock.data, weight, rolling)['result']
-    return response
+    response = _dataframe_sma(
+        big_stock.data, weight, rolling)
+    response = response.rename({'result': name}, axis=1)
+    return response[[name]]
 
 
 def sma_multi_function(data: StockData, weight: int, name: str, rolling_list: List[int] = [15, 100]):
-    response = StrategyResult(value=pd.DataFrame(
-        index=data.data.index, columns=[name]))
+    response = pd.DataFrame(
+        index=data.data.index, columns=[name])
     """
     strategyfunction here
     """
-    response.value[name] = _dataframe_sma_multi(
-        data.data, weight, rolling_list)['result']
-    return response
+    response = _dataframe_sma_multi(
+        data.data, weight, rolling_list)
+    response = response.rename({'result': name}, axis=1)
+    return response[[name]]
 
 
 def sma_multi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, rolling_list: List[int] = [15, 100]):
-    response = StrategyResult(value=pd.DataFrame(
-        index=data.data.index, columns=[name]))
+    response = pd.DataFrame(
+        index=data.data.index, columns=[name])
     """
     strategyfunction here
     """
-    response.value[name] = _dataframe_sma_multi(
-        big_stock.data, weight, rolling_list)['result']
-    return response
+    response = _dataframe_sma_multi(
+        big_stock.data, weight, rolling_list)
+    response = response.rename({'result': name}, axis=1)
+    return response[[name]]
 
 
 def _calculate_rsi(data, period):
@@ -104,8 +108,8 @@ def _calculate_rsi(data, period):
 
 
 def rsi_function(data: StockData, weight: int, name: str, period: int, overbought_level: int, oversold_level: int):
-    response = StrategyResult(value=pd.DataFrame(
-        index=data.data.index, columns=[name]))
+    response = pd.DataFrame(
+        index=data.data.index, columns=[name])
     data.data['rsi'] = _calculate_rsi(data.data['close'], period)
 
     def _rsi_function(r):
@@ -115,14 +119,14 @@ def rsi_function(data: StockData, weight: int, name: str, period: int, overbough
             return (StrategyResultColumnType.SELL, weight)
         else:
             return (StrategyResultColumnType.KEEP, weight)
-    response.value[name] = data.data.apply(
+    response[name] = data.data.apply(
         lambda r: _rsi_function(r['close']), axis=1)
     return response
 
 
 def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, period: int, overbought_level: int, oversold_level: int):
-    response = StrategyResult(value=pd.DataFrame(
-        index=data.data.index, columns=[name]))
+    response = pd.DataFrame(
+        index=data.data.index, columns=[name])
     data.data['rsi'] = _calculate_rsi(big_stock.data['close'], period)
 
     def _rsi_function(r):
@@ -132,14 +136,14 @@ def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: S
             return (StrategyResultColumnType.SELL, weight)
         else:
             return (StrategyResultColumnType.KEEP, weight)
-    response.value[name] = data.data.apply(
+    response[name] = data.data.apply(
         lambda r: _rsi_function(r['close']), axis=1)
     return response
 
 
 def greed_fear_index_function(data: StockData, weight: int, name: str, greed_fear_index_data: pd.DataFrame, index_fear: int, index_greed: int):
-    response = StrategyResult(value=pd.DataFrame(
-        index=data.data.index, columns=[name]))
+    response = pd.DataFrame(
+        index=data.data.index, columns=[name])
     raw_result = data.data.join(greed_fear_index_data, how='inner')
 
     def _greed_fear_index(r):
@@ -149,12 +153,12 @@ def greed_fear_index_function(data: StockData, weight: int, name: str, greed_fea
             return (StrategyResultColumnType.BUY, weight)
         else:
             return (StrategyResultColumnType.KEEP, weight)
-    response.value[name] = raw_result.apply(
+    response[name] = raw_result.apply(
         lambda r: _greed_fear_index(r), axis=1)
     return response
 
 
-def strategy_execute(strategy: Strategy, data: StockData):
+def _inner_strategy_execute(strategy: Strategy, data: StockData):
     try:
         if not strategy.function:
             strategy.function = basic_function
@@ -163,3 +167,50 @@ def strategy_execute(strategy: Strategy, data: StockData):
         return ResponseSuccess(response)
     except Exception as e:
         return ResponseFailure(ResponseTypes.SYSTEM_ERROR, e)
+
+
+def _sum_strategy(series: pd.Series, stockdata: StockData):
+    total_result = {StrategyResultColumnType.KEEP: 0,
+                    StrategyResultColumnType.SELL: 0,
+                    StrategyResultColumnType.BUY: 0}
+    for idx in series.index:
+        type, weight = series[idx]
+        if stockdata.data['volume'][series.name] == 0.0:
+            total_result[StrategyResultColumnType.KEEP] += weight
+        else:
+            total_result[type] += weight
+    return max(total_result, key=total_result.get)
+
+
+def strategy_execute(strategy_list: List[Strategy], stockdata: StockData):
+    strategy_total_result = pd.DataFrame(
+        index=stockdata.data.index)
+    strategy_bucket = set()
+    strategy_name_list = set([strategy.name for strategy in strategy_list])
+    strategy_dict = {bucket_item: 1 for bucket_item in strategy_name_list}
+    for strategy in strategy_list:
+        if strategy.name in strategy_bucket:
+            strategy_dict[strategy.name] += 1
+            strategy.name = "{}_{}".format(
+                strategy.name, strategy_dict[strategy.name])
+        else:
+            strategy_bucket.add(strategy.name)
+        response = _inner_strategy_execute(
+            strategy=strategy, data=stockdata)
+        if isinstance(response, ResponseFailure):
+            return ResponseFailure(ResponseTypes.SYSTEM_ERROR, "strategy function error occured!")
+        else:
+            strategy_result = response.value
+            if len(stockdata) >= len(strategy_result):
+                strategy_total_result = strategy_total_result.join(
+                    strategy_result, how='left', rsuffix='{}_'.format(strategy.name))
+            else:
+                strategy_total_result = strategy_total_result.join(
+                    strategy_result, how='inner', rsuffix='{}_'.format(strategy.name))
+
+    # fill na with
+    for column in strategy_total_result.columns:
+        strategy_total_result[column] = strategy_total_result[column].fillna(
+            {i: (StrategyResultColumnType.KEEP, 0) for i in strategy_total_result.index})
+    return ResponseSuccess(StrategyResult(strategy_total_result.apply(
+        lambda row: _sum_strategy(row, stockdata), axis=1)))

@@ -38,7 +38,7 @@ class StockData:
         return len(self.data)
 
     def __add__(self, o):
-        if self.data.index[0] > o.data.index[0]:
+        if self.data.index[0] > o.data.index[0] or len(self.data.index) < len(o.data.index):
             self.data = o.data.add(self.data)
         else:
             self.data.add(self.data)

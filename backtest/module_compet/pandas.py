@@ -12,6 +12,8 @@ def custom_datetime(function):
         if pandas_version >= '2.0.0':
             if 'format' not in kwargs:
                 kwargs['format'] = 'mixed'
+            if 'unit' in kwargs:
+                del kwargs['format']
         return function(*args, **kwargs)
     return run
 

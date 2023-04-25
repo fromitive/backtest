@@ -6,7 +6,7 @@ from backtest.util.selector_reference_util import \
     generate_empty_selector_reference
 
 
-def standardize_selector_reference(selector_reference_list: List[SelectorReference], from_date='', to_date=''):
+def standardize_selector_reference(selector_reference_list: List[SelectorReference], to_date=''):
     if len(selector_reference_list) == 0:
         return []
     mindate = selector_reference_list[0].data.index[0]
