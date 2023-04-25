@@ -23,7 +23,7 @@ def sample_selector_result():
     dict = {'SYMBOL1': [(SelectorResultColumnType.KEEP, 100), (SelectorResultColumnType.SELECT, 100)],
             'SYMBOL2': [(SelectorResultColumnType.KEEP, 100), (SelectorResultColumnType.SELECT, 100)],
             'date': ['2022-10-30', '2022-11-11']}
-    return SelectorResult.from_dict(adict=dict)
+    return ResponseSuccess(SelectorResult.from_dict(adict=dict))
 
 
 def test_selector_execute(sample_selector_reference, sample_selector_result):
@@ -33,10 +33,12 @@ def test_selector_execute(sample_selector_reference, sample_selector_result):
     selector = Selector(name='test selector', weight=100, selector_function=test_function, options={
                         'param1': 'value1', 'param2': 'value2'}, reference=sample_selector_reference)
     response = selector_execute(
-        selector=selector, symbol_list=['SYMBOL1', 'SYMBOL2'])
+        selector_list=[selector], symbol_list=['SYMBOL1', 'SYMBOL2'], from_date='2022-10-30', to_date='2022-12-01')
     test_function.assert_called_once_with(
         symbol_list=symbol_list, weight=selector.weight, name=selector.name, reference=selector.reference, param1='value1', param2='value2')
     selector_result = response.value
     assert isinstance(response, ResponseSuccess)
     assert isinstance(selector_result, SelectorResult)
     assert list(selector_result.value.columns) == ['SYMBOL1', 'SYMBOL2']
+    assert selector_result.value['SYMBOL1'].loc['2022-11-11'] == SelectorResultColumnType.SELECT
+    assert selector_result.value['SYMBOL2'].loc['2022-11-11'] == SelectorResultColumnType.SELECT
