@@ -90,25 +90,26 @@ def sample_strategy_result(dict_strategy_result):
     return strategy_result
 
 
-def test_strategy_execute(sample_stock_data, sample_strategy_result):
+def test_strategy_execute(sample_stock_data, strategy_result_data_frame):
     test_function = mock.Mock()
-    test_function.return_value = sample_strategy_result
+    test_function.return_value = strategy_result_data_frame
     strategy = Strategy(name='test strategy', weight=1,
                         target='TARGET', function=test_function, options={'param1': 'value1', 'param2': 'value2'})
-    response = strategy_execute(strategy=strategy, data=sample_stock_data)
+    response = strategy_execute(
+        strategy_list=[strategy], stockdata=sample_stock_data)
     test_function.assert_called_once_with(
         data=sample_stock_data, weight=strategy.weight, name=strategy.name, param1='value1', param2='value2')
     strategy_result = response.value
     assert isinstance(response, ResponseSuccess)
     assert isinstance(strategy_result, StrategyResult)
-    assert strategy_result.target == 'TEST'
 
 
 def test_strategy_basic_function(stockdata_list):
     strategy = Strategy(name='test strategy', weight=1999,
                         target='TARGET', function=basic_function)
     for stockdata in stockdata_list:
-        response = strategy_execute(strategy=strategy, data=stockdata)
+        response = strategy_execute(
+            strategy_list=[strategy], stockdata=stockdata)
         strategy_result = response.value
         assert isinstance(response, ResponseSuccess)
         assert isinstance(strategy_result, StrategyResult)
