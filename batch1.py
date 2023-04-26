@@ -23,16 +23,16 @@ from backtest.use_cases.strategy_execute import (greed_fear_index_function,
                                                  sma_multi_big_stock_function)
 from backtest.util.stockdata_util import get_greed_fear_index
 
-top_rate = float(sys.argv[1])
-select_pick = int(sys.argv[2])
+top_rate = 0.35  # float(sys.argv[1])
+select_pick = 3  # int(sys.argv[2])
 
 print('top_rate {}, select_pick {}'.format(top_rate, select_pick))
 request2 = build_stock_data_from_repo_request(
-    filters={'order__eq': 'BTC', 'from__eq': '2017-01-01'})
+    filters={'order__eq': 'BTC', 'from__eq': '2022-01-01'})
 response2 = stockdata_from_repo(BithumbRepo(), request=request2, cache=True)
 
 request4 = build_stock_data_from_repo_request(
-    filters={'order__eq': 'US500', 'from__eq': '2017-01-01'})
+    filters={'order__eq': 'US500', 'from__eq': '2022-01-01'})
 response4 = stockdata_from_repo(FinanceRepo(), request=request4, cache=True)
 
 
@@ -60,7 +60,7 @@ strategy8 = Strategy(name='sma_multi_big_stock', function=sma_multi_big_stock_fu
 
 
 response = make_crypto_selector_reference_makretcap(
-    market=MarketType.BITHUMB, from_date='2017-01-01', cache=True)
+    market=MarketType.BITHUMB, from_date='2022-01-01', cache=True)
 if isinstance(response, ResponseSuccess):
     selector_reference = response.value
     symbol_list = get_bithumb_symbol()
@@ -68,7 +68,7 @@ if isinstance(response, ResponseSuccess):
                          reference=response.value, options={'top_rate': top_rate, 'select_pick': select_pick})
     print('selector_execute')
     response = selector_execute(
-        selector_list=[selector1], symbol_list=symbol_list, from_date='2017-01-01')
+        selector_list=[selector1], symbol_list=symbol_list, from_date='2022-01-01')
     selector_result = response.value
     print('make crypto_stockdata_list')
     stockdata_list = make_crypto_stockdata_list(
