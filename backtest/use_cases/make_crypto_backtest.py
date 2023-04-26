@@ -1,18 +1,27 @@
 from datetime import datetime
 from enum import Enum
+from typing import List
 
 import requests
 
 from backtest.domains.selector_reference import SelectorReference
+from backtest.domains.selector_result import (SelectorResult,
+                                              SelectorResultColumnType)
+from backtest.domains.stockdata import StockData
 from backtest.module_compet.pandas import pd
+from backtest.repository.webrepo.crypto.bithumb_repo import BithumbRepo
 from backtest.repository.webrepo.crypto.coingecko_repo import CoinGeckoRepo
+from backtest.repository.webrepo.crypto.upbit_repo import UpbitRepo
 from backtest.request.selector_reference_from_repo import \
     build_selector_reference_from_repo_request
+from backtest.request.stockdata_from_repo import \
+    build_stock_data_from_repo_request
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
 from backtest.use_cases.selector_reference_from_repo import \
     selector_reference_from_repo
 from backtest.use_cases.standardize_selector_reference import \
     standardize_selector_reference
+from backtest.use_cases.stockdata_from_repo import stockdata_from_repo
 
 SELECTOR_REFERENCE_CSV_REPO_PATH = "backtest/csvrepo/selector_reference/{repo_name}_{symbol}_{from_date}_{to_date}.csv"
 SELECTOR_REFERENCE_CSV_REPO_DIR_PATH = "backtest/csvrepo/selector_reference"
@@ -91,3 +100,38 @@ def make_crypto_selector_reference_makretcap(market: MarketType, from_date: str 
     if cache:
         total_selector_reference.to_csv(CSV_PATH)
     return ResponseSuccess(total_selector_reference)
+
+
+def make_crypto_stockdata_list(market: MarketType, selector_result: SelectorResult, cache: bool = False) -> List[StockData] | ResponseFailure:
+    from_date = datetime.strftime(selector_result.value.index[0], "%Y-%m-%d")
+    to_date = datetime.strftime(selector_result.value.index[-1], "%Y-%m-%d")
+    stockdata_list = []
+    stockdata_repo = None
+    if market == MarketType.BITHUMB:
+        stockdata_repo = BithumbRepo
+    elif market == MarketType.UPBIT:
+        stockdata_repo = UpbitRepo
+    else:
+        return ResponseFailure(type_=ResponseTypes.SYSTEM_ERROR, message='market repo not supported value = {}'.format(market))
+
+    selector_result_df = selector_result.value
+    stockdata_symbol_list_df = selector_result_df.apply(
+        lambda row: row.index[row == SelectorResultColumnType.SELECT].tolist(), axis=1)
+
+    stockdata_symbol_bucket = set()
+    for index in stockdata_symbol_list_df.index:
+        stockdata_symbol_bucket.update(stockdata_symbol_list_df[index])
+    symbol_len = len(stockdata_symbol_bucket)
+    for idx, symbol in enumerate(stockdata_symbol_bucket, start=1):
+        print('Get StockData[{symbol}] From {repo_name} {current}/{total}'.format(
+            symbol=symbol, repo_name=stockdata_repo, current=idx, total=symbol_len))
+        request = build_stock_data_from_repo_request(
+            filters={'order__eq': symbol, 'from__eq': from_date, 'to__eq': to_date})
+        response = stockdata_from_repo(
+            stockdata_repo(), request=request, cache=cache)
+        if isinstance(response, ResponseFailure):
+            return ResponseFailure(ResponseTypes.SYSTEM_ERROR, "failed to load repository symbol value : {symbol} in {repo_name}".format(symbol=symbol, repo_name=stockdata_repo))
+        else:
+            stockdata_list.append(response.value)
+
+    return stockdata_list
