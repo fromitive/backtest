@@ -86,10 +86,11 @@ def selector_execute(selector_list: List[Selector], symbol_list: List, from_date
             if isinstance(response, ResponseFailure):
                 return ResponseFailure(ResponseTypes.SYSTEM_ERROR, "fail to exectue selector_function")
             else:
-                selector_result_df = response.value.value
+                selector_result_df = response.value
                 selector_result_df = selector_result_df.reindex(
                     selector_total_result_df.index)
                 _fill_na_with_keep(selector_result_df)
+                print('calculate selector_total_result...')
                 selector_total_result_df = selector_total_result_df.apply(
                     lambda row: sum_selector_result(row, selector_result_df=selector_result_df), axis=1)
         selector_total_result_df = selector_total_result_df.apply(
