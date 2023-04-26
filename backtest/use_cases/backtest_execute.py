@@ -1,10 +1,8 @@
-import os
-import sys
-
 import numpy as np
 
 from backtest.domains.backtest import Backtest
 from backtest.domains.backtest_result import BacktestResult
+from backtest.domains.selector_result import SelectorResultColumnType
 from backtest.domains.strategy_result import (StrategyResult,
                                               StrategyResultColumnType)
 from backtest.module_compet.pandas import pd
@@ -32,7 +30,6 @@ def _recalc_profit(backtest_result: pd.Series, max_bucket_cnt: int, column_name:
 
 
 def backtest_execute(backtest: Backtest):
-    stockdata_cnt = len(backtest.stockdata_list)
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
 
@@ -49,7 +46,7 @@ def backtest_execute(backtest: Backtest):
     # divide pre, post strategy list
     pre_strategy_list = [
         strategy for strategy in backtest.strategy_list if not strategy.after]
-    # future : to apply post_strategy_list
+    # TODO: future : to apply post_strategy_list
     # post_strategy_list = [
     #     strategy for strategy in backtest.strategy_list if strategy.after]
 
@@ -66,9 +63,25 @@ def backtest_execute(backtest: Backtest):
     # loop base_index
     bucket_cnt = 0
     max_bucket_cnt = 0
-    for index in base_index:
-        pick_stockdata_list = backtest.stockdata_list  # future fix
+    index_len = len(base_index)
+    for num, index in enumerate(base_index, start=1):
+        print('calc backtest {current} / {total}'.format(current=num, total=index_len))
+        stockdata_cnt = 0
+        pick_stockdata_list = []
+        if backtest.selector_result is None:
+            stockdata_cnt = len(backtest.stockdata_list)
+            pick_stockdata_list = backtest.stockdata_list
+        else:
+            selector_result_df = backtest.selector_result.value
+            stockdata_symbol_list_df = selector_result_df.apply(
+                lambda row: row.index[row == SelectorResultColumnType.SELECT].tolist(), axis=1)
+            stockdata_symbol_list = stockdata_symbol_list_df[index]
+            stockdata_cnt = len(stockdata_symbol_list)
+            pick_stockdata_list = [
+                stockdata for stockdata in backtest.stockdata_list if stockdata.symbol in stockdata_symbol_list]
+
         # calc potential profit and each symbol stock profit
+
         total_potential_profit = 0.0
         for stockdata in pick_stockdata_list:
             # if not calc pre_strategy_result calc it.
