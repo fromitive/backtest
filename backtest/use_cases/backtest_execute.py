@@ -65,7 +65,8 @@ def backtest_execute(backtest: Backtest):
     max_bucket_cnt = 0
     index_len = len(base_index)
     for num, index in enumerate(base_index, start=1):
-        print('calc backtest {current} / {total}'.format(current=num, total=index_len))
+        print(
+            'calc backtest {current} / {total}'.format(current=num, total=index_len))
         stockdata_cnt = 0
         pick_stockdata_list = []
         if backtest.selector_result is None:
@@ -81,7 +82,6 @@ def backtest_execute(backtest: Backtest):
                 stockdata for stockdata in backtest.stockdata_list if stockdata.symbol in stockdata_symbol_list]
 
         # calc potential profit and each symbol stock profit
-
         total_potential_profit = 0.0
         for stockdata in pick_stockdata_list:
             # if not calc pre_strategy_result calc it.
@@ -96,15 +96,15 @@ def backtest_execute(backtest: Backtest):
             if strategy_result_of_day == StrategyResultColumnType.BUY:
                 stock_bucket_dict[stockdata.symbol].append(index)
                 bucket_cnt += 1
-
-        for symbol in stockdata_dict:
+        has_bucket_symbol_list = [
+            symbol for symbol in stock_bucket_dict if stock_bucket_dict[symbol]]
+        for symbol in has_bucket_symbol_list:
             symbol_profit = 0.0
             for profit_index in stock_bucket_dict[symbol]:
                 profit_earn = stockdata_dict[symbol].data['close'][index] - \
                     stockdata_dict[symbol].data['close'][profit_index]
                 profit_base = stockdata_dict[symbol].data['close'][profit_index]
-                symbol_profit += ((profit_earn / profit_base) /
-                                  bucket_cnt) / stockdata_cnt
+                symbol_profit += (profit_earn / profit_base) / bucket_cnt
             stock_profit_dict[symbol] = symbol_profit
             total_potential_profit += symbol_profit
 
@@ -124,6 +124,12 @@ def backtest_execute(backtest: Backtest):
         backtest_result_raw.at[index, 'stock_bucket'] = _calc_stock_count(
             stock_bucket_dict)
         max_bucket_cnt = max(max_bucket_cnt, bucket_cnt)
+
+        if index == base_index[-1]:
+            print('today coin list')
+            for today_symbol in stockdata_symbol_list:
+                print('{symbol_name} : {strategy_result}'.format(
+                    symbol_name=today_symbol, strategy_result=strategy_result_dict[today_symbol].value[index]))
         # calculate profit and bucket
         # post strategy execute
     backtest_result_raw['shift_stock_bucket'] = backtest_result_raw['stock_bucket'].shift(
