@@ -29,7 +29,7 @@ def _recalc_profit(backtest_result: pd.Series, max_bucket_cnt: int, column_name:
     return profit * (bucket_cnt / max_bucket_cnt)
 
 
-def backtest_execute(backtest: Backtest):
+def backtest_execute(backtest: Backtest, verbose: bool = True):
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
 
@@ -65,8 +65,10 @@ def backtest_execute(backtest: Backtest):
     max_bucket_cnt = 0
     index_len = len(base_index)
     for num, index in enumerate(base_index, start=1):
-        print(
-            'calc backtest {current} / {total}'.format(current=num, total=index_len))
+
+        if verbose == True:
+            print(
+                'calc backtest {current} / {total}'.format(current=num, total=index_len))
         stockdata_cnt = 0
         pick_stockdata_list = []
         if backtest.selector_result is None:
