@@ -16,6 +16,25 @@ def basic_function(data: StockData, weight: int, name: str):
     return response
 
 
+def min_max_function(data: StockData, weight: int, name: str, avg_rolling: int = 7, avg_vol_rate: float = 2.0, high_low_diff_rate: float = 0.10):
+    response = pd.DataFrame(
+        index=data.data.index, columns=[name])
+    temp_df = data.data.copy()
+    temp_df['avg_vol'] = temp_df['volume'].rolling(avg_rolling).mean()
+
+    def _min_max_function(r):
+        current_avg_vol_rate = (r.volume / r.avg_vol)
+        current_high_low_rate = (r.high - r.low)
+        if current_avg_vol_rate >= avg_vol_rate and current_high_low_rate >= high_low_diff_rate:
+            return (StrategyResultColumnType.BUY, weight)
+        else:
+            return (StrategyResultColumnType.KEEP, 0)
+    temp_df['result'] = temp_df.apply(lambda r: _min_max_function(r), axis=1)
+
+    response[name] = temp_df['result']
+    return response
+
+
 def _dataframe_sma(df: pd.DataFrame, weight: int, rolling=100):
     df['sma'] = df['close'].rolling(rolling).mean().fillna(0)
     df['smashift'] = df['sma'].shift(1).fillna(0)
