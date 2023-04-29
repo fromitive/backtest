@@ -217,7 +217,7 @@ def _sellonly_strategy(row: pd.Series, name: str):
     if col_type == StrategyResultColumnType.BUY:
         return (StrategyResultColumnType.KEEP, 0)
     else:
-        return row
+        return (col_type, weight)
 
 
 def _buyonly_strategy(row: pd.Series, name: str):
@@ -225,7 +225,7 @@ def _buyonly_strategy(row: pd.Series, name: str):
     if col_type == StrategyResultColumnType.SELL:
         return (StrategyResultColumnType.KEEP, 0)
     else:
-        return row
+        return (col_type, weight)
 
 
 def strategy_execute(strategy_list: List[Strategy], stockdata: StockData):
