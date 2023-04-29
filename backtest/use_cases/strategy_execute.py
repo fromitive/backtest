@@ -201,6 +201,16 @@ def _sum_strategy(series: pd.Series, stockdata: StockData):
     return max(total_result, key=total_result.get)
 
 
+def _inverse_strategy(row: pd.Series, name: str):
+    col_type, weight = row[name]
+    if col_type == StrategyResultColumnType.BUY:
+        return (StrategyResultColumnType.SELL, weight)
+    elif col_type == StrategyResultColumnType.SELL:
+        return (StrategyResultColumnType.BUY, weight)
+    else:
+        return (StrategyResultColumnType.KEEP, weight)
+
+
 def strategy_execute(strategy_list: List[Strategy], stockdata: StockData):
     strategy_total_result = pd.DataFrame(
         index=stockdata.data.index)
@@ -220,6 +230,9 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData):
             return ResponseFailure(ResponseTypes.SYSTEM_ERROR, "strategy function error occured!")
         else:
             strategy_result = response.value
+            if strategy.inverse:
+                strategy_result[strategy.name] = strategy_result.apply(
+                    lambda row: _inverse_strategy(row, strategy.name), axis=1)
             if len(stockdata) >= len(strategy_result):
                 strategy_total_result = strategy_total_result.join(
                     strategy_result, how='left', rsuffix='{}_'.format(strategy.name))

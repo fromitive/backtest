@@ -9,4 +9,5 @@ class Strategy:
     weight: int = 0
     target: str = 'ALL'
     after: bool = False
+    inverse: bool = False
     options: dict = dataclasses.field(default_factory=dict)
