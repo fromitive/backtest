@@ -6,6 +6,7 @@ from backtest.domains.selector import Selector
 from backtest.domains.selector_reference import SelectorReference
 from backtest.domains.selector_result import (SelectorResult,
                                               SelectorResultColumnType)
+from backtest.module_compet.pandas import pd
 from backtest.response import ResponseSuccess
 from backtest.use_cases.selector_execute import selector_execute
 
@@ -23,7 +24,11 @@ def sample_selector_result():
     dict = {'SYMBOL1': [(SelectorResultColumnType.KEEP, 100), (SelectorResultColumnType.SELECT, 100)],
             'SYMBOL2': [(SelectorResultColumnType.KEEP, 100), (SelectorResultColumnType.SELECT, 100)],
             'date': ['2022-10-30', '2022-11-11']}
-    return ResponseSuccess(SelectorResult.from_dict(adict=dict))
+    df = pd.DataFrame(dict,
+                      columns=['SYMBOL1', 'SYMBOL2', 'date'])
+    df.set_index('date', inplace=True)
+    df.index = pd.to_datetime(df.index, dayfirst=True)
+    return ResponseSuccess(df)
 
 
 def test_selector_execute(sample_selector_reference, sample_selector_result):
