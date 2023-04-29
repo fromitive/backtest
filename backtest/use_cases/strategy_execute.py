@@ -1,4 +1,3 @@
-from enum import Enum
 from typing import List
 
 from backtest.domains.stockdata import StockData
@@ -247,10 +246,10 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData):
             return ResponseFailure(ResponseTypes.SYSTEM_ERROR, "strategy function error occured!")
         else:
             strategy_result = response.value
-            if strategy.flag == StrategyExecuteFlagType.INVERSE:
+            if strategy.inverse:
                 strategy_result[strategy.name] = strategy_result.apply(
                     lambda row: _inverse_strategy(row, strategy.name), axis=1)
-            elif strategy.flag == StrategyExecuteFlagType.SELLONLY:
+            if strategy.flag == StrategyExecuteFlagType.SELLONLY:
                 strategy_result[strategy.name] = strategy_result.apply(
                     lambda row: _sellonly_strategy(row, strategy.name), axis=1)
             elif strategy.flag == StrategyExecuteFlagType.BUYONLY:
