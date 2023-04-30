@@ -21,6 +21,8 @@ def _calc_stock_count(stock_bucket):
 
 
 def _recalc_profit(backtest_result: pd.Series, max_bucket_cnt: int, column_name: str):
+    if max_bucket_cnt == 0:
+        return 0.0
     profit = backtest_result[column_name]
     bucket_cnt = 0
     if backtest_result['shift_stock_bucket'] is not None:
