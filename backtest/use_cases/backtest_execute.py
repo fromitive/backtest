@@ -35,7 +35,7 @@ def _recalc_profit(backtest_result: pd.Series, max_bucket_cnt: int, column_name:
 
 def _calc_diff(bucket_item, symbol, stockdata_dict, index):
     profit_index = bucket_item
-    stockdata_dict[symbol].data['close'][index] - \
+    return stockdata_dict[symbol].data['close'][index] - \
         stockdata_dict[symbol].data['close'][profit_index]
 
 
