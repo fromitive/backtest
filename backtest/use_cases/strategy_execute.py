@@ -77,6 +77,31 @@ def sma_function(data: StockData, weight: int, name: str, rolling=100):
     return response[[name]]
 
 
+def buy_sell_rate_function(data: StockData, weight: int, name: str,
+                           sell_rolling: int = 7, sell_rate: float = 0.5,
+                           buy_rolling: int = 30, buy_rate: float = 0.5):
+    temp_df = data.data.copy()
+
+    temp_df['sell_rolling'] = temp_df['high'].rolling(
+        sell_rolling).max().fillna(temp_df['high'])
+    temp_df['buy_rolling'] = temp_df['low'].rolling(
+        buy_rolling).min().fillna(temp_df['low'])
+    """
+    strategyfunction here
+    """
+    def _buy_sell_rate(r: pd.Series):
+        current_sell_rate = r.close / r.sell_rolling
+        current_buy_rate = r.buy_rolling / r.close
+        if current_sell_rate >= sell_rate:
+            return (StrategyResultColumnType.SELL, weight)
+        if current_buy_rate >= buy_rate:
+            return (StrategyResultColumnType.BUY, weight)
+        return (StrategyResultColumnType.KEEP, 0)
+
+    temp_df[name] = temp_df.apply(lambda r: _buy_sell_rate(r), axis=1)
+    return temp_df[[name]]
+
+
 def sma_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, rolling=100):
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
