@@ -46,7 +46,7 @@ def _calc_symbol_profit(profit_price: float, current_price: float, bucket_cnt: i
     return symbol_profit
 
 
-def backtest_execute(backtest: Backtest, verbose: bool = True):
+def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_result: bool = False):
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
 
@@ -103,7 +103,7 @@ def backtest_execute(backtest: Backtest, verbose: bool = True):
             # if not calc pre_strategy_result calc it.
             if not isinstance(strategy_result_dict[stockdata.symbol], StrategyResult):
                 response = strategy_execute(
-                    strategy_list=pre_strategy_list, stockdata=stockdata)
+                    strategy_list=pre_strategy_list, stockdata=stockdata, save_strategy_result=save_strategy_result)
                 if isinstance(response, ResponseSuccess):
                     strategy_result_dict[stockdata.symbol] = response.value
                 else:

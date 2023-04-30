@@ -232,7 +232,7 @@ def _buyonly_strategy(row: pd.Series, name: str):
         return (col_type, weight)
 
 
-def strategy_execute(strategy_list: List[Strategy], stockdata: StockData):
+def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_strategy_result: bool = False):
     strategy_total_result = pd.DataFrame(
         index=stockdata.data.index)
     strategy_bucket = set()
@@ -267,7 +267,9 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData):
             else:
                 strategy_total_result = strategy_total_result.join(
                     strategy_result, how='inner', rsuffix='{}_'.format(strategy.name))
-
+        if save_strategy_result:
+            strategy_total_result.to_csv(
+                "{}_strategy_total_result.csv".format(stockdata.symbol))
     # fill na with
     for column in strategy_total_result.columns:
         strategy_total_result[column] = strategy_total_result[column].fillna(
