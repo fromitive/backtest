@@ -90,8 +90,8 @@ def buy_rate_function(data: StockData, weight: int, name: str,
         if pd.isna(r.buy_rolling):
             return (StrategyResultColumnType.KEEP, 0)
         else:
-            current_buy_rate = 1 - (r.close / r.buy_rolling)
-            if current_buy_rate >= buy_rate:
+            current_buy_rate = r.close / r.buy_rolling
+            if current_buy_rate <= buy_rate:
                 return (StrategyResultColumnType.BUY, weight)
         return (StrategyResultColumnType.KEEP, 0)
 
@@ -102,8 +102,8 @@ def buy_rate_function(data: StockData, weight: int, name: str,
 def sell_rate_function(data: StockData, weight: int, name: str,
                        sell_rolling: int = 30, sell_rate: float = 0.5):
     temp_df = data.data.copy()
-    temp_df['sell_rolling'] = temp_df['low'].rolling(
-        sell_rolling).min()
+    temp_df['sell_rolling'] = temp_df['high'].rolling(
+        sell_rolling).max()
     """
     strategyfunction here
     """
@@ -111,7 +111,7 @@ def sell_rate_function(data: StockData, weight: int, name: str,
         if pd.isna(r.sell_rolling):
             return (StrategyResultColumnType.KEEP, 0)
         else:
-            current_sell_rate = 1 - (r.sell_rolling / r.close)
+            current_sell_rate = r.close / r.sell_rolling
             if current_sell_rate >= sell_rate:
                 return (StrategyResultColumnType.SELL, weight)
         return (StrategyResultColumnType.KEEP, 0)
