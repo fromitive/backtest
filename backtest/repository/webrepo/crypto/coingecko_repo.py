@@ -56,6 +56,7 @@ class CoinGeckoRepo:
             if self.to_date:
                 temp_df = temp_df.loc[:'{} 23:59'.format(self.to_date)]
             temp_df = temp_df[['date', 'marketcap']]
+            time.sleep(0.2)
             return SelectorReference.from_dict(temp_df.to_dict('list'), self.symbol)
         else:
             raise Exception('request error', response.status_code)
