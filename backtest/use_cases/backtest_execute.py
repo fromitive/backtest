@@ -1,3 +1,4 @@
+import math
 from typing import Tuple
 
 import numpy as np
@@ -85,17 +86,14 @@ def backtest_execute(backtest: Backtest, verbose: bool = True):
         if verbose == True:
             print(
                 'calc backtest {current} / {total}'.format(current=num, total=index_len))
-        stockdata_cnt = 0
         pick_stockdata_list = []
         if backtest.selector_result is None:
-            stockdata_cnt = len(backtest.stockdata_list)
             pick_stockdata_list = backtest.stockdata_list
         else:
             selector_result_df = backtest.selector_result.value
             stockdata_symbol_list_df = selector_result_df.apply(
                 lambda row: row.index[row == SelectorResultColumnType.SELECT].tolist(), axis=1)
             stockdata_symbol_list = stockdata_symbol_list_df[index]
-            stockdata_cnt = len(stockdata_symbol_list)
             pick_stockdata_list = [
                 stockdata for stockdata in backtest.stockdata_list if stockdata.symbol in stockdata_symbol_list]
 
@@ -131,7 +129,7 @@ def backtest_execute(backtest: Backtest, verbose: bool = True):
                 # sell strategy execute
                 if strategy_result_of_day == StrategyResultColumnType.SELL:
                     # cacluate sell_rate
-                    sell_bucket_length = int(
+                    sell_bucket_length = math.ceil(
                         len(stock_bucket_dict[symbol]) * strategy_rate)
                     sorted_bucket_list = sorted(
                         stock_bucket_dict[symbol], key=lambda v: _calc_diff(v, symbol, stockdata_dict, index))
