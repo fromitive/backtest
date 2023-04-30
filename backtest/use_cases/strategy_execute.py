@@ -198,7 +198,8 @@ def _sum_strategy(series: pd.Series, stockdata: StockData):
             total_result[StrategyResultColumnType.KEEP] += weight
         else:
             total_result[type] += weight
-    total_weight = sum(total_result.values())
+    total_weight = total_result[StrategyResultColumnType.BUY] + \
+        total_result[StrategyResultColumnType.SELL]
     weight_rate = 1.0
     if total_weight != 0:
         weight_rate = max(total_result.values()) / total_weight
