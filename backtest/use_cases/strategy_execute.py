@@ -166,10 +166,10 @@ def greed_fear_index_function(data: StockData, weight: int, name: str, greed_fea
     raw_result = data.data.join(greed_fear_index_data, how='inner')
 
     def _greed_fear_index(r):
-        if (r['value']) < index_fear:  # extreme greed
+        if (r['value']) <= index_fear:  # extreme greed
             return (StrategyResultColumnType.BUY, weight)
-        elif (r['value'] > index_greed):
-            return (StrategyResultColumnType.BUY, weight)
+        elif (r['value'] >= index_greed):
+            return (StrategyResultColumnType.SELL, weight)
         else:
             return (StrategyResultColumnType.KEEP, weight)
     response[name] = raw_result.apply(
