@@ -2,7 +2,7 @@ import sys
 
 from backtest.domains.backtest import Backtest
 from backtest.domains.selector import Selector
-from backtest.domains.strategy import Strategy
+from backtest.domains.strategy import Strategy, StrategyExecuteFlagType
 from backtest.repository.finance.finance_repo import FinanceRepo
 from backtest.repository.webrepo.crypto.bithumb_repo import BithumbRepo
 from backtest.request.stockdata_from_repo import \
@@ -45,7 +45,7 @@ strategy1 = Strategy(name='snp_big_stock', function=sma_big_stock_function,
 strategy2 = Strategy(name='sma_big_stock', function=sma_big_stock_function,
                      weight=2, options={'big_stock': stockdata2, 'rolling': 90})
 strategy3 = Strategy(name='sma_self', function=sma_function,
-                     weight=1, options={'rolling': 10})
+                     weight=3, inverse=True, flag=StrategyExecuteFlagType.BUYONLY, options={'rolling': 60})
 greed_fear_df = get_greed_fear_index()
 strategy4 = Strategy(name='Greed_Fear_Index', function=greed_fear_index_function,
                      weight=1, options={'greed_fear_index_data': greed_fear_df, 'index_fear': 20, 'index_greed': 60})
