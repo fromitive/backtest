@@ -133,7 +133,6 @@ def backtest_execute(backtest: Backtest, verbose: bool = True):
                     # cacluate sell_rate
                     sell_bucket_length = int(
                         len(stock_bucket_dict[symbol]) * strategy_rate)
-                    bucket_cnt -= sell_bucket_length
                     sorted_bucket_list = sorted(
                         stock_bucket_dict[symbol], key=lambda v: _calc_diff(v, symbol, stockdata_dict, index))
                     sell_profit = 0.0
@@ -142,6 +141,7 @@ def backtest_execute(backtest: Backtest, verbose: bool = True):
                         sell_profit += _calc_symbol_profit(profit_price=stockdata_dict[symbol].data['close'][profit_index],
                                                            current_price=stockdata_dict[symbol].data['close'][index],
                                                            bucket_cnt=bucket_cnt)
+                    bucket_cnt -= sell_bucket_length
                     stock_profit_dict[symbol] -= sell_profit
                     stock_bucket_dict[symbol] = sorted_bucket_list
                     backtest_result_raw.at[index,
