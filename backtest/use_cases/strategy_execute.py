@@ -198,7 +198,11 @@ def _sum_strategy(series: pd.Series, stockdata: StockData):
             total_result[StrategyResultColumnType.KEEP] += weight
         else:
             total_result[type] += weight
-    return max(total_result, key=total_result.get)
+    total_weight = sum(total_result.values())
+    weight_rate = 1.0
+    if total_weight != 0:
+        weight_rate = max(total_result.values()) / total_weight
+    return [max(total_result, key=total_result.get), weight_rate]
 
 
 def _inverse_strategy(row: pd.Series, name: str):
