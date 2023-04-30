@@ -267,12 +267,12 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_s
             else:
                 strategy_total_result = strategy_total_result.join(
                     strategy_result, how='inner', rsuffix='{}_'.format(strategy.name))
-        if save_strategy_result:
-            strategy_total_result.to_csv(
-                "{}_strategy_total_result.csv".format(stockdata.symbol))
     # fill na with
     for column in strategy_total_result.columns:
         strategy_total_result[column] = strategy_total_result[column].fillna(
             {i: (StrategyResultColumnType.KEEP, 0) for i in strategy_total_result.index})
+    if save_strategy_result:
+        strategy_total_result.to_csv(
+            "{}_strategy_total_result.csv".format(stockdata.symbol))
     return ResponseSuccess(StrategyResult(strategy_total_result.apply(
         lambda row: _sum_strategy(row, stockdata), axis=1)))
