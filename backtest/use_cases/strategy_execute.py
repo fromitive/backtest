@@ -1,5 +1,5 @@
 from typing import List
-
+import numpy
 from backtest.domains.stockdata import StockData
 from backtest.domains.strategy import Strategy, StrategyExecuteFlagType
 from backtest.domains.strategy_result import (StrategyResult,
@@ -77,28 +77,46 @@ def sma_function(data: StockData, weight: int, name: str, rolling=100):
     return response[[name]]
 
 
-def buy_sell_rate_function(data: StockData, weight: int, name: str,
-                           sell_rolling: int = 7, sell_rate: float = 0.5,
-                           buy_rolling: int = 30, buy_rate: float = 0.5):
+def buy_rate_function(data: StockData, weight: int, name: str,
+                      buy_rolling: int = 30, buy_rate: float = 0.5):
     temp_df = data.data.copy()
-
-    temp_df['sell_rolling'] = temp_df['high'].rolling(
-        sell_rolling).max().fillna(temp_df['high'])
-    temp_df['buy_rolling'] = temp_df['low'].rolling(
-        buy_rolling).min().fillna(temp_df['low'])
+    temp_df['buy_rolling'] = temp_df['high'].rolling(
+        buy_rolling).max()
     """
     strategyfunction here
     """
-    def _buy_sell_rate(r: pd.Series):
-        current_sell_rate = r.close / r.sell_rolling
-        current_buy_rate = r.buy_rolling / r.close
-        if current_sell_rate >= sell_rate:
-            return (StrategyResultColumnType.SELL, weight)
-        if current_buy_rate >= buy_rate:
-            return (StrategyResultColumnType.BUY, weight)
+
+    def _buy_rate(r: pd.Series):
+        if pd.isna(r.buy_rolling):
+            return (StrategyResultColumnType.KEEP, 0)
+        else:
+            current_buy_rate = 1 - (r.close / r.buy_rolling)
+            if current_buy_rate >= buy_rate:
+                return (StrategyResultColumnType.BUY, weight)
         return (StrategyResultColumnType.KEEP, 0)
 
-    temp_df[name] = temp_df.apply(lambda r: _buy_sell_rate(r), axis=1)
+    temp_df[name] = temp_df.apply(lambda r: _buy_rate(r), axis=1)
+    return temp_df[[name]]
+
+
+def sell_rate_function(data: StockData, weight: int, name: str,
+                       sell_rolling: int = 30, sell_rate: float = 0.5):
+    temp_df = data.data.copy()
+    temp_df['sell_rolling'] = temp_df['low'].rolling(
+        sell_rolling).min()
+    """
+    strategyfunction here
+    """
+    def _sell_rate(r: pd.Series):
+        if pd.isna(r.sell_rolling):
+            return (StrategyResultColumnType.KEEP, 0)
+        else:
+            current_sell_rate = 1 - (r.sell_rolling / r.close)
+            if current_sell_rate >= sell_rate:
+                return (StrategyResultColumnType.SELL, weight)
+        return (StrategyResultColumnType.KEEP, 0)
+
+    temp_df[name] = temp_df.apply(lambda r: _sell_rate(r), axis=1)
     return temp_df[[name]]
 
 
