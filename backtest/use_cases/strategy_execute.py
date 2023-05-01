@@ -93,7 +93,7 @@ def buy_rate_function(data: StockData, weight: int, name: str,
             current_buy_rate = r.close / r.buy_rolling
             if current_buy_rate <= buy_rate:
                 return (StrategyResultColumnType.BUY, weight)
-        return (StrategyResultColumnType.KEEP, weight)
+        return (StrategyResultColumnType.KEEP, 0)
 
     temp_df[name] = temp_df.apply(lambda r: _buy_rate(r), axis=1)
     return temp_df[[name]]
@@ -241,12 +241,10 @@ def _sum_strategy(series: pd.Series, stockdata: StockData):
             total_result[StrategyResultColumnType.KEEP] += weight
         else:
             total_result[type] += weight
-    total_weight = total_result[StrategyResultColumnType.BUY] + \
-        total_result[StrategyResultColumnType.SELL]
-    weight_rate = 1.0
-    if total_weight != 0:
-        weight_rate = max(total_result.values()) / total_weight
-    return [max(total_result, key=total_result.get), weight_rate]
+    score_value = sorted(total_result.values(), reverse=True)
+    strategy_rate = ((score_value[0] + 1) * 2) / \
+        (1 + score_value[1] + score_value[2])
+    return [max(total_result, key=total_result.get), strategy_rate]
 
 
 def _inverse_strategy(row: pd.Series, name: str):

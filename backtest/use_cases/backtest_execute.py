@@ -108,11 +108,13 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
                     strategy_result_dict[stockdata.symbol] = response.value
                 else:
                     return ResponseFailure(ResponseTypes.SYSTEM_ERROR, "[ERROR] strategy_execute")
-            strategy_result_of_day, strategy_rate = strategy_result_dict[
+            strategy_result_of_day, weight_score = strategy_result_dict[
                 stockdata.symbol].value[index]
             if strategy_result_of_day == StrategyResultColumnType.BUY:
-                stock_bucket_dict[stockdata.symbol].append(index)
-                bucket_cnt += 1
+                buy_score = math.ceil(weight_score)
+                for count in range(buy_score):
+                    stock_bucket_dict[stockdata.symbol].append(index)
+                    bucket_cnt += 1
         has_bucket_symbol_list = [
             symbol for symbol in stock_bucket_dict if stock_bucket_dict[symbol]]
         for symbol in has_bucket_symbol_list:
@@ -125,21 +127,24 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
             total_potential_profit += symbol_profit
 
             if len(stock_bucket_dict[symbol]) > 0:  # already calcuated stock
-                strategy_result_of_day, strategy_rate = strategy_result_dict[symbol].value[index]
+                strategy_result_of_day, weight_score = strategy_result_dict[symbol].value[index]
                 # sell strategy execute
                 if strategy_result_of_day == StrategyResultColumnType.SELL:
                     # cacluate sell_rate
-                    sell_bucket_length = math.ceil(
-                        len(stock_bucket_dict[symbol]) * strategy_rate)
+                    total_stock_length = len(stock_bucket_dict[symbol])
+                    sell_count = math.ceil(
+                        (weight_score / 100) * total_stock_length)
+                    if sell_count >= total_stock_length:
+                        sell_count = total_stock_length
                     sorted_bucket_list = sorted(
                         stock_bucket_dict[symbol], key=lambda v: _calc_diff(v, symbol, stockdata_dict, index))
                     sell_profit = 0.0
-                    for count in range(sell_bucket_length):
+                    for count in range(sell_count):
                         profit_index = sorted_bucket_list.pop()
                         sell_profit += _calc_symbol_profit(profit_price=stockdata_dict[symbol].data['close'][profit_index],
                                                            current_price=stockdata_dict[symbol].data['close'][index],
                                                            bucket_cnt=bucket_cnt)
-                    bucket_cnt -= sell_bucket_length
+                    bucket_cnt -= sell_count
                     stock_profit_dict[symbol] -= sell_profit
                     stock_bucket_dict[symbol] = sorted_bucket_list
                     backtest_result_raw.at[index,
