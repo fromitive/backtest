@@ -1,5 +1,7 @@
 from typing import List
+
 import numpy
+
 from backtest.domains.stockdata import StockData
 from backtest.domains.strategy import Strategy, StrategyExecuteFlagType
 from backtest.domains.strategy_result import (StrategyResult,
@@ -100,10 +102,13 @@ def buy_rate_function(data: StockData, weight: int, name: str,
 
 
 def sell_rate_function(data: StockData, weight: int, name: str,
-                       sell_rolling: int = 30, sell_rate: float = 0.5):
+                       sell_rolling: int = 30, sell_rate: float = 0.5, base: str = "top"):
     temp_df = data.data.copy()
-    temp_df['sell_rolling'] = temp_df['high'].rolling(
-        sell_rolling).max()
+    if base.lower() == "bottom":
+        temp_df['sell_rolling'] = temp_df['low'].rolling(sell_rolling).min()
+    else:
+        temp_df['sell_rolling'] = temp_df['high'].rolling(
+            sell_rolling).max()
     """
     strategyfunction here 
     """
