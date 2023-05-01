@@ -114,7 +114,7 @@ def sell_rate_function(data: StockData, weight: int, name: str,
             current_sell_rate = r.close / r.sell_rolling
             if current_sell_rate >= sell_rate:
                 return (StrategyResultColumnType.SELL, weight)
-        return (StrategyResultColumnType.KEEP, weight)
+        return (StrategyResultColumnType.KEEP, 0)
 
     temp_df[name] = temp_df.apply(lambda r: _sell_rate(r), axis=1)
     return temp_df[[name]]
