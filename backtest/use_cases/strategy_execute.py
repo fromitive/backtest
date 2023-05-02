@@ -190,7 +190,7 @@ def rsi_function(data: StockData, weight: int, name: str, period: int, overbough
             else:
                 return (StrategyResultColumnType.KEEP, keep_weight)
     response[name] = data.data.apply(
-        lambda r: _rsi_function(r['close']), axis=1)
+        lambda r: _rsi_function(r['rsi']), axis=1)
     return response
 
 
@@ -210,7 +210,7 @@ def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: S
             else:
                 return (StrategyResultColumnType.KEEP, keep_weight)
     response[name] = data.data.apply(
-        lambda r: _rsi_function(r['close']), axis=1)
+        lambda r: _rsi_function(r['rsi']), axis=1)
     return response
 
 
