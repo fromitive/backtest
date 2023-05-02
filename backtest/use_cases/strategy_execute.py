@@ -242,7 +242,7 @@ def _inner_strategy_execute(strategy: Strategy, data: StockData):
         return ResponseFailure(ResponseTypes.SYSTEM_ERROR, e)
 
 
-def _sum_strategy(series: pd.Series, stockdata: StockData):
+def _sum_strategy(series: pd.Series, stockdata: StockData, weight_score_function):
     total_result = {StrategyResultColumnType.KEEP: 0,
                     StrategyResultColumnType.SELL: 0,
                     StrategyResultColumnType.BUY: 0}
@@ -253,8 +253,8 @@ def _sum_strategy(series: pd.Series, stockdata: StockData):
         else:
             total_result[type] += weight
     score_value = sorted(total_result.values(), reverse=True)
-    strategy_rate = ((score_value[0] + 1) * 2) / \
-        (1 + score_value[1] + score_value[2])
+    strategy_rate = weight_score_function(
+        first=score_value[0], second=score_value[1], third=score_value[2])
     return [max(total_result, key=total_result.get), strategy_rate]
 
 
@@ -284,7 +284,12 @@ def _buyonly_strategy(row: pd.Series, name: str):
         return (col_type, weight)
 
 
-def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_strategy_result: bool = False):
+def _basic_weight_score_function(first: int, second: int, third: int):
+    return ((first + 1) * 2) / \
+        (1 + second + third)
+
+
+def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function):
     strategy_total_result = pd.DataFrame(
         index=stockdata.data.index)
     strategy_bucket = set()
@@ -327,4 +332,4 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_s
         strategy_total_result.to_csv(
             "{}_strategy_total_result.csv".format(stockdata.symbol))
     return ResponseSuccess(StrategyResult(strategy_total_result.apply(
-        lambda row: _sum_strategy(row, stockdata), axis=1)))
+        lambda row: _sum_strategy(row, stockdata, weight_score_function), axis=1)))
