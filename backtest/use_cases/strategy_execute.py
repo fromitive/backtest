@@ -174,7 +174,7 @@ def _calculate_rsi(data, period):
     return rsi
 
 
-def rsi_function(data: StockData, weight: int, name: str, period: int, overbought_level: int, oversold_level: int):
+def rsi_function(data: StockData, weight: int, name: str, period: int, overbought_level: int, oversold_level: int, keep_weight: int = -1):
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
     data.data['rsi'] = _calculate_rsi(data.data['close'], period)
@@ -185,13 +185,16 @@ def rsi_function(data: StockData, weight: int, name: str, period: int, overbough
         elif r >= overbought_level:
             return (StrategyResultColumnType.SELL, weight)
         else:
-            return (StrategyResultColumnType.KEEP, weight)
+            if keep_weight == -1:
+                return (StrategyResultColumnType.KEEP, weight)
+            else:
+                return (StrategyResultColumnType.KEEP, keep_weight)
     response[name] = data.data.apply(
         lambda r: _rsi_function(r['close']), axis=1)
     return response
 
 
-def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, period: int, overbought_level: int, oversold_level: int):
+def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, period: int, overbought_level: int, oversold_level: int, keep_weight: int = -1):
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
     data.data['rsi'] = _calculate_rsi(big_stock.data['close'], period)
@@ -202,7 +205,10 @@ def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: S
         elif r >= overbought_level and r < overbought_level:
             return (StrategyResultColumnType.SELL, weight)
         else:
-            return (StrategyResultColumnType.KEEP, weight)
+            if keep_weight == -1:
+                return (StrategyResultColumnType.KEEP, weight)
+            else:
+                return (StrategyResultColumnType.KEEP, keep_weight)
     response[name] = data.data.apply(
         lambda r: _rsi_function(r['close']), axis=1)
     return response
