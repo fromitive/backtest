@@ -50,9 +50,9 @@ greed_fear_df = get_greed_fear_index()
 strategy4 = Strategy(name='Greed_Fear_Index', function=greed_fear_index_function,
                      weight=1, options={'greed_fear_index_data': greed_fear_df, 'index_fear': 20, 'index_greed': 60})
 strategy5 = Strategy(name='rsi_function', function=rsi_function,
-                     weight=0.5, options={'period': 15, 'overbought_level': 30, 'oversold_level': 70})
+                     weight=0.5, options={'period': 15, 'buy_score': 30, 'sell_score': 70})
 strategy6 = Strategy(name='rsi_big_stock_function', function=rsi_big_stock_function,
-                     weight=0.5, options={'big_stock': stockdata4, 'period': 15, 'overbought_level': 30, 'oversold_level': 70})
+                     weight=0.5, options={'big_stock': stockdata4, 'period': 15, 'buy_score': 30, 'sell_score': 70})
 strategy7 = Strategy(name='sma_multi_big_stock', function=sma_multi_big_stock_function,
                      weight=1, options={'big_stock': stockdata4, 'rolling_list': [100, 15]})
 strategy8 = Strategy(name='sma_multi_big_stock', function=sma_multi_big_stock_function,

@@ -174,15 +174,15 @@ def _calculate_rsi(data, period):
     return rsi
 
 
-def rsi_function(data: StockData, weight: int, name: str, period: int, overbought_level: int, oversold_level: int, keep_weight: int = -1):
+def rsi_function(data: StockData, weight: int, name: str, period: int, sell_score: int, buy_score: int, keep_weight: int = -1):
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
     data.data['rsi'] = _calculate_rsi(data.data['close'], period)
 
     def _rsi_function(r):
-        if r <= oversold_level:
+        if r <= buy_score:
             return (StrategyResultColumnType.BUY, weight)
-        elif r >= overbought_level:
+        elif r >= sell_score:
             return (StrategyResultColumnType.SELL, weight)
         else:
             if keep_weight == -1:
@@ -194,15 +194,15 @@ def rsi_function(data: StockData, weight: int, name: str, period: int, overbough
     return response
 
 
-def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, period: int, overbought_level: int, oversold_level: int, keep_weight: int = -1):
+def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, period: int, sell_score: int, buy_score: int, keep_weight: int = -1):
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
     data.data['rsi'] = _calculate_rsi(big_stock.data['close'], period)
 
     def _rsi_function(r):
-        if r <= oversold_level and r > oversold_level:
+        if r <= buy_score:
             return (StrategyResultColumnType.BUY, weight)
-        elif r >= overbought_level and r < overbought_level:
+        elif r >= sell_score:
             return (StrategyResultColumnType.SELL, weight)
         else:
             if keep_weight == -1:
