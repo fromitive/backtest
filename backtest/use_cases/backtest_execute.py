@@ -11,7 +11,8 @@ from backtest.domains.strategy_result import (StrategyResult,
 from backtest.module_compet.pandas import pd
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
 from backtest.use_cases.standardize_stock import standardize_stock
-from backtest.use_cases.strategy_execute import strategy_execute
+from backtest.use_cases.strategy_execute import (_basic_weight_score_function,
+                                                 strategy_execute)
 
 
 def _calc_stock_count(stock_bucket):
@@ -46,7 +47,7 @@ def _calc_symbol_profit(profit_price: float, current_price: float, bucket_cnt: i
     return symbol_profit
 
 
-def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_result: bool = False):
+def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function):
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
 
@@ -103,7 +104,7 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
             # if not calc pre_strategy_result calc it.
             if not isinstance(strategy_result_dict[stockdata.symbol], StrategyResult):
                 response = strategy_execute(
-                    strategy_list=pre_strategy_list, stockdata=stockdata, save_strategy_result=save_strategy_result)
+                    strategy_list=pre_strategy_list, stockdata=stockdata, save_strategy_result=save_strategy_result, weight_score_function=weight_score_function)
                 if isinstance(response, ResponseSuccess):
                     strategy_result_dict[stockdata.symbol] = response.value
                 else:

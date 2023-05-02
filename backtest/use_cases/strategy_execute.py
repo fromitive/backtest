@@ -288,7 +288,6 @@ def _basic_weight_score_function(first: int, second: int, third: int):
     return ((first + 1) * 2) / \
         (1 + second + third)
 
-
 def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function):
     strategy_total_result = pd.DataFrame(
         index=stockdata.data.index)
