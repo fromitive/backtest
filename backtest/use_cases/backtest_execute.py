@@ -66,7 +66,8 @@ def _calc_stock_profit_table(index_list, stockdata_dict, verbose:bool = False):
             result_dict[symbol][copy_df.index[i]] = (copy_df['close'] - copy_df['close'].shift(i + 1)) / copy_df['close'] 
 
         result_dict[symbol] = result_dict[symbol].fillna(0.0)
-        
+    
+    return result_dict
 
 
 def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function):
