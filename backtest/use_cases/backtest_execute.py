@@ -47,9 +47,7 @@ def _calc_symbol_profit(profit_price: float, current_price: float, bucket_cnt: i
     return symbol_profit
 
 
-
-
-def _calc_stock_profit_table(index_list, stockdata_dict, verbose:bool = False):
+def _calc_stock_profit_table(index_list, stockdata_dict, verbose: bool = False):
     # TODO: [future] change to calculate profit better than below.  
     import warnings
     warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -62,10 +60,10 @@ def _calc_stock_profit_table(index_list, stockdata_dict, verbose:bool = False):
         if verbose:
             print("\rgenerate stock profit table {current} / {total}".format(current=count, total=stock_len), end='', flush=True)
         copy_df = stockdata_dict[symbol].data
-        for i in range(len(copy_df.index)):
-            profit_table[copy_df.index[-(i+1)]] = (copy_df['close'] - copy_df['close'].shift(i)) / copy_df['close'] 
+        for i in range(index_len):
+            result_dict[copy_df.index[-(i+1)]] = (copy_df['close'] - copy_df['close'].shift(i)) / copy_df['close'] 
 
-        result_dict[symbol] = result_dict[symbol].fillna(0.0) # e.g result_dict['BTC']['previous_index']['current_index']
+        result_dict[symbol] = result_dict[symbol].fillna(0.0)  # e.g result_dict['BTC']['previous_index']['current_index']
     
     return result_dict
 
