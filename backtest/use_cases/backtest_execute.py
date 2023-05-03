@@ -160,10 +160,11 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
         max_bucket_cnt = max(max_bucket_cnt, bucket_cnt)
 
         if index == base_index[-2]:
-            print('today coin list')
-            for today_symbol in pick_stockdata_list:
-                print('{symbol_name} : {strategy_result}'.format(
-                    symbol_name=today_symbol.symbol, strategy_result=strategy_result_dict[today_symbol.symbol].value[index]))
+            if verbose:
+                print('today coin list')
+                for today_symbol in pick_stockdata_list:
+                    print('{symbol_name} : {strategy_result}'.format(
+                        symbol_name=today_symbol.symbol, strategy_result=strategy_result_dict[today_symbol.symbol].value[index]))
         # calculate profit and bucket
         # post strategy execute
     backtest_result_raw['shift_stock_bucket'] = backtest_result_raw['stock_bucket'].shift(
