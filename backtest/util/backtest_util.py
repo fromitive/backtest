@@ -25,7 +25,7 @@ def grid_search_optimize_one_strategy_parameter(strategy_function, target_stockd
         total_min_potential_profit_list = []
         for stock_idx, stockdata in enumerate(target_stockdata_list, start=1):
             if verbose:
-                print("\rtest[{idx} / {total_test_len}] progress {stock_idx} / {total}".format(
+                print("\rtest[{idx} / {total_test_len}] progress {stock_idx} / {total} ".format(
                     idx=idx, total_test_len=combinations_len, stock_idx=stock_idx, total=stock_len), end='', flush=True)
             strategy = Strategy(name=strategy_function.__name__,
                                 function=strategy_function, weight=1, inverse=inverse, options=param_combination)
@@ -38,7 +38,8 @@ def grid_search_optimize_one_strategy_parameter(strategy_function, target_stockd
                 backtest_df = backtest_result.value.value
                 total_profit = backtest_df['total_profit'].expanding(
                 ).sum().iloc[-1]
-                potential_min_profit = backtest_df['total_potential_profit']
+                potential_min_profit = backtest_df['total_potential_profit'].min(
+                )
                 total_profit_list.append(total_profit)
                 total_min_potential_profit_list.append(potential_min_profit)
         mean_total_profit = statistics.mean(total_profit_list)
@@ -49,8 +50,8 @@ def grid_search_optimize_one_strategy_parameter(strategy_function, target_stockd
                 idx=idx, function_name=strategy_function.__name__, param_combination=param_combination, inverse=inverse, mean_total_profit=mean_total_profit, mean_min_potential_profit=mean_min_potential_profit))
         for k, v in param_combination.items():
             result_dict[k].append(v)
-        result_dict['mean_min_potential_profit'].append(
+        result_dict['mean_total_profit'].append(
             mean_total_profit)
-        result_dict['mean_total_profit'].append(mean_min_potential_profit)
+        result_dict['mean_min_potential_profit'].append(mean_min_potential_profit)
     result_df = pd.DataFrame(result_dict)
     return result_df
