@@ -15,6 +15,11 @@ def grid_search_optimize_one_strategy_parameter(strategy_function, target_stockd
     result_dict = {key: [] for key in param_grid.keys()}
     result_dict['mean_total_profit'] = []
     result_dict['mean_min_potential_profit'] = []
+    result_dict['max_total_symbol'] = []
+    result_dict['max_total_profit'] = []
+    result_dict['min_potential_symbol'] = []
+    result_dict['min_potential_profit'] = [] 
+
     stock_len = len(target_stockdata_list)
     keys, values = zip(*param_grid.items())
     param_combinations_list = [
@@ -23,6 +28,7 @@ def grid_search_optimize_one_strategy_parameter(strategy_function, target_stockd
     for idx, param_combination in enumerate(param_combinations_list, start=1):
         total_profit_list = []
         total_min_potential_profit_list = []
+
         for stock_idx, stockdata in enumerate(target_stockdata_list, start=1):
             if verbose:
                 print("\rtest[{idx} / {total_test_len}] progress {stock_idx} / {total} ".format(
@@ -32,7 +38,6 @@ def grid_search_optimize_one_strategy_parameter(strategy_function, target_stockd
             backtest = Backtest(
                 strategy_list=[strategy], stockdata_list=[stockdata])
             response = backtest_execute(backtest)
-
             if isinstance(response, ResponseSuccess):
                 backtest_result = response
                 backtest_df = backtest_result.value.value
@@ -40,18 +45,32 @@ def grid_search_optimize_one_strategy_parameter(strategy_function, target_stockd
                 ).sum().iloc[-1]
                 potential_min_profit = backtest_df['total_potential_profit'].min(
                 )
-                total_profit_list.append(total_profit)
-                total_min_potential_profit_list.append(potential_min_profit)
-        mean_total_profit = statistics.mean(total_profit_list)
+                total_profit_list.append((total_profit, stockdata.symbol))
+                total_min_potential_profit_list.append(
+                    (potential_min_profit, stockdata.symbol))
+        mean_total_profit = statistics.mean(
+            [value for value, symbol in total_profit_list])
         mean_min_potential_profit = statistics.mean(
-            total_min_potential_profit_list)
+            [value for value, symbol in total_min_potential_profit_list])
+        max_total_profit, max_total_symbol = max(total_profit_list, key=lambda k : k[0])
+        min_potential_profit, min_potential_symbol = min(total_min_potential_profit_list, key=lambda k : k[0])
         if verbose:
-            print('test[{idx}]: {function_name} parmater_combination : {param_combination} inverse : {inverse} mean_total_profit : {mean_total_profit} mean_min_potential_profit: {mean_min_potential_profit}'.format(
-                idx=idx, function_name=strategy_function.__name__, param_combination=param_combination, inverse=inverse, mean_total_profit=mean_total_profit, mean_min_potential_profit=mean_min_potential_profit))
+            print('test[{idx}]: {function_name} parmater_combination : {param_combination} inverse : {inverse} mean_total_profit : {mean_total_profit} mean_min_potential_profit: {mean_min_potential_profit} max_total_profit[{max_total_symbol}]: {max_total_profit}, min_potential_profit[{min_potential_symbol}]: {min_potential_profit}'.format(
+                idx=idx, function_name=strategy_function.__name__, param_combination=param_combination,
+                inverse=inverse, mean_total_profit=mean_total_profit,
+                mean_min_potential_profit=mean_min_potential_profit,
+                max_total_symbol=max_total_symbol, max_total_profit=max_total_profit,
+                min_potential_symbol=min_potential_symbol, min_potential_profit=min_potential_profit))
         for k, v in param_combination.items():
             result_dict[k].append(v)
         result_dict['mean_total_profit'].append(
             mean_total_profit)
-        result_dict['mean_min_potential_profit'].append(mean_min_potential_profit)
+        result_dict['mean_min_potential_profit'].append(
+            mean_min_potential_profit)
+        result_dict['max_total_symbol'].append(max_total_symbol)
+        result_dict['max_total_profit'].append(max_total_profit)
+        result_dict['min_potential_symbol'].append(min_potential_symbol)
+        result_dict['min_potential_profit'].append(min_potential_profit)
+
     result_df = pd.DataFrame(result_dict)
     return result_df
