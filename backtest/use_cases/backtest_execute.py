@@ -62,10 +62,10 @@ def _calc_stock_profit_table(index_list, stockdata_dict, verbose:bool = False):
         if verbose:
             print("\rgenerate stock profit table {current} / {total}".format(current=count, total=stock_len), end='', flush=True)
         copy_df = stockdata_dict[symbol].data
-        for i in range(index_len):
-            result_dict[symbol][copy_df.index[i]] = (copy_df['close'] - copy_df['close'].shift(i + 1)) / copy_df['close'] 
+        for i in range(len(copy_df.index)):
+            profit_table[copy_df.index[-(i+1)]] = (copy_df['close'] - copy_df['close'].shift(i)) / copy_df['close'] 
 
-        result_dict[symbol] = result_dict[symbol].fillna(0.0)
+        result_dict[symbol] = result_dict[symbol].fillna(0.0) # e.g result_dict['BTC']['previous_index']['current_index']
     
     return result_dict
 
