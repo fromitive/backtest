@@ -81,7 +81,7 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
         stockdata.symbol: [] for stockdata in backtest.stockdata_list}
     stock_profit_dict = {
         stockdata.symbol: 0.0 for stockdata in backtest.stockdata_list}
-    stock_profit_table = _calc_stock_profit_table(index_list=base_index, stockdata_dict=stockdata_dict, verbose=verbose)
+    # stock_profit_table = _calc_stock_profit_table(index_list=base_index, stockdata_dict=stockdata_dict, verbose=verbose)
 
     # divide pre, post strategy list
     pre_strategy_list = [
