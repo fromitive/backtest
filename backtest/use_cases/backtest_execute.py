@@ -47,6 +47,28 @@ def _calc_symbol_profit(profit_price: float, current_price: float, bucket_cnt: i
     return symbol_profit
 
 
+
+
+def _calc_stock_profit_table(index_list, stockdata_dict, verbose:bool = False):
+    # TODO: [future] change to calculate profit better than below.  
+    import warnings
+    warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
+
+    result_dict = {
+        symbol: pd.DataFrame(index=index_list) for symbol in stockdata_dict}
+    stock_len = len(result_dict)
+    index_len = len(index_list)
+    for count, symbol in enumerate(result_dict, start=1):
+        if verbose:
+            print("\rgenerate stock profit table {current} / {total}".format(current=count, total=stock_len), end='', flush=True)
+        copy_df = stockdata_dict[symbol].data
+        for i in range(index_len):
+            result_dict[symbol][copy_df.index[i]] = (copy_df['close'] - copy_df['close'].shift(i + 1)) / copy_df['close'] 
+
+        result_dict[symbol] = result_dict[symbol].fillna(0.0)
+        
+
+
 def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function):
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
@@ -60,6 +82,7 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
         stockdata.symbol: [] for stockdata in backtest.stockdata_list}
     stock_profit_dict = {
         stockdata.symbol: 0.0 for stockdata in backtest.stockdata_list}
+    stock_profit_table = _calc_stock_profit_table(index_list=base_index, stockdata_dict=stockdata_dict, verbose=verbose)
 
     # divide pre, post strategy list
     pre_strategy_list = [
@@ -82,8 +105,9 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
     bucket_cnt = 0
     max_bucket_cnt = 0
     index_len = len(base_index)
+    visited_index = []
     for num, index in enumerate(base_index, start=1):
-
+        visited_index.append(index)
         if verbose == True:
             print(
                 'calc backtest {current} / {total}'.format(current=num, total=index_len))
