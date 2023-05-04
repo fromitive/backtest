@@ -163,6 +163,7 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
                 if sell_cnt >= total_stock_length:
                     sell_cnt = total_stock_length
                 sell_profit = 0.0
+                tmp_sell_cnt = sell_cnt
                 while buy_list != []:
                     if sell_cnt == 0:
                         break
@@ -170,15 +171,14 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
                     bucket_cnt = stock_bucket_df.at[profit_index, 'bucket']
                     if bucket_cnt < sell_cnt:
                         sell_profit += (bucket_cnt * stock_profit_hash_table[symbol].at[index, profit_index]) / total_bucket_cnt
-                        sell_cnt -= bucket_cnt
-                        total_bucket_cnt -= bucket_cnt
                         stock_bucket_df.at[profit_index, 'bucket'] = 0
                         bucket_cnt = 0
+                        sell_cnt -= bucket_cnt
                     else:  # bucket_cnt >= sell_cnt
                         sell_profit += (sell_cnt * stock_profit_hash_table[symbol].at[index, profit_index]) / total_bucket_cnt
                         stock_bucket_df.at[profit_index, 'bucket'] -= sell_cnt
-                        total_bucket_cnt -= sell_cnt
                         sell_cnt = 0
+                total_bucket_cnt -= tmp_sell_cnt
                 total_potential_profit -= sell_profit
                 backtest_result_raw.at[index, 'total_profit'] += sell_profit
             backtest_result_raw.at[index, 'total_potential_profit'] = total_potential_profit
