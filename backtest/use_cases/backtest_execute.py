@@ -18,7 +18,9 @@ from backtest.use_cases.strategy_execute import (_basic_weight_score_function,
 def _calc_stock_count(stock_bucket):
     summary_bucket = dict()
     for symbol in stock_bucket:
-        symbol_bucket_len = len(stock_bucket[symbol])
+        stock_bucket_df = stock_bucket[symbol]
+        has_stock_bucket = stock_bucket_df.loc[stock_bucket_df['bucket'] > 0]
+        symbol_bucket_len = has_stock_bucket['bucket'].sum()
         if symbol_bucket_len > 0:
             summary_bucket[symbol] = symbol_bucket_len
     return summary_bucket
@@ -47,11 +49,7 @@ def _calc_symbol_profit(profit_price: float, current_price: float, bucket_cnt: i
     return symbol_profit
 
 
-def _calc_stock_profit_table(index_list, stockdata_dict, verbose: bool = False):
-    # TODO: [future] change to calculate profit better than below.  
-    import warnings
-    warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
-
+def _calc_stock_profit_hash_table(index_list, stockdata_dict, verbose: bool = False):
     result_dict = {
         symbol: pd.DataFrame(index=index_list) for symbol in stockdata_dict}
     stock_len = len(result_dict)
@@ -60,11 +58,10 @@ def _calc_stock_profit_table(index_list, stockdata_dict, verbose: bool = False):
         if verbose:
             print("\rgenerate stock profit table {current} / {total}".format(current=count, total=stock_len), end='', flush=True)
         copy_df = stockdata_dict[symbol].data
-        for i in range(index_len):
-            result_dict[copy_df.index[-(i+1)]] = (copy_df['close'] - copy_df['close'].shift(i)) / copy_df['close'] 
 
-        result_dict[symbol] = result_dict[symbol].fillna(0.0)  # e.g result_dict['BTC']['previous_index']['current_index']
-    
+        for i in range(index_len):
+            result_dict[symbol][copy_df.index[i]] = (copy_df['close'] - copy_df['close'][copy_df.index[i]]) / copy_df['close'] 
+        result_dict[symbol] = result_dict[symbol]  # use example e.g result_dict['BTC']['previous_index']['current_index']
     return result_dict
 
 
@@ -78,10 +75,11 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
     stockdata_dict = {
         stockdata.symbol: stockdata for stockdata in backtest.stockdata_list}
     stock_bucket_dict = {
-        stockdata.symbol: [] for stockdata in backtest.stockdata_list}
+        stockdata.symbol: pd.DataFrame(columns=['bucket'], index=base_index).fillna(0) for stockdata in backtest.stockdata_list}
+    stock_temp_dict = dict()
     stock_profit_dict = {
         stockdata.symbol: 0.0 for stockdata in backtest.stockdata_list}
-    # stock_profit_table = _calc_stock_profit_table(index_list=base_index, stockdata_dict=stockdata_dict, verbose=verbose)
+    stock_profit_hash_table = _calc_stock_profit_hash_table(index_list=base_index, stockdata_dict=stockdata_dict, verbose=verbose)
 
     # divide pre, post strategy list
     pre_strategy_list = [
@@ -101,7 +99,7 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
     backtest_result_raw['total_potential_profit'] = 0.0
 
     # loop base_index
-    bucket_cnt = 0
+    total_bucket_cnt = 0
     max_bucket_cnt = 0
     index_len = len(base_index)
     visited_index = []
@@ -136,51 +134,59 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
                 stockdata.symbol].value[index]
             if strategy_result_of_day == StrategyResultColumnType.BUY:
                 buy_score = math.ceil(weight_score)
-                for count in range(buy_score):
-                    stock_bucket_dict[stockdata.symbol].append(index)
-                    bucket_cnt += 1
-        has_bucket_symbol_list = [
-            symbol for symbol in stock_bucket_dict if stock_bucket_dict[symbol]]
-        for symbol in has_bucket_symbol_list:
-            symbol_profit = 0.0
-            for profit_index in stock_bucket_dict[symbol]:
-                symbol_profit += _calc_symbol_profit(profit_price=stockdata_dict[symbol].data['close'][profit_index],
-                                                     current_price=stockdata_dict[symbol].data['close'][index],
-                                                     bucket_cnt=bucket_cnt)
-            stock_profit_dict[symbol] = symbol_profit
-            total_potential_profit += symbol_profit
+                if stockdata.symbol not in stock_temp_dict:
+                    stock_temp_dict[stockdata.symbol] = buy_score
+                else:
+                    stock_temp_dict[stockdata.symbol] += buy_score
+                stock_bucket_dict[stockdata.symbol].at[index, 'bucket'] += buy_score  # buy stock
+                total_bucket_cnt += buy_score
 
-            if len(stock_bucket_dict[symbol]) > 0:  # already calcuated stock
-                strategy_result_of_day, weight_score = strategy_result_dict[symbol].value[index]
-                # sell strategy execute
-                if strategy_result_of_day == StrategyResultColumnType.SELL:
-                    # cacluate sell_rate
-                    total_stock_length = len(stock_bucket_dict[symbol])
-                    sell_count = math.ceil(
-                        (weight_score / 100) * total_stock_length)
-                    if sell_count >= total_stock_length:
-                        sell_count = total_stock_length
-                    sorted_bucket_list = sorted(
-                        stock_bucket_dict[symbol], key=lambda v: _calc_diff(v, symbol, stockdata_dict, index))
-                    sell_profit = 0.0
-                    for count in range(sell_count):
-                        profit_index = sorted_bucket_list.pop()
-                        sell_profit += _calc_symbol_profit(profit_price=stockdata_dict[symbol].data['close'][profit_index],
-                                                           current_price=stockdata_dict[symbol].data['close'][index],
-                                                           bucket_cnt=bucket_cnt)
-                    bucket_cnt -= sell_count
-                    stock_profit_dict[symbol] -= sell_profit
-                    stock_bucket_dict[symbol] = sorted_bucket_list
-                    backtest_result_raw.at[index,
-                                           'total_profit'] += sell_profit
-                    total_potential_profit -= stock_profit_dict[symbol]
-        backtest_result_raw.at[index,
-                               'total_potential_profit'] = total_potential_profit
+        # calc total profit, potential profit
+        for symbol in stock_temp_dict:
+            symbol_profit = 0.0
+            stock_bucket_df = stock_bucket_dict[symbol]
+            buy_df = stock_bucket_df.loc[stock_bucket_df['bucket'] > 0]
+            buy_list = list(buy_df.index)
+            buy_list.sort(key=lambda profit_index: stock_profit_hash_table[symbol].at[index, profit_index])
+            for profit_index in buy_list:
+                bucket_cnt = stock_bucket_df.at[profit_index, 'bucket']
+                symbol_profit += (bucket_cnt * stock_profit_hash_table[symbol].at[index, profit_index]) / total_bucket_cnt
+            total_potential_profit += symbol_profit
+            strategy_result_of_day, weight_score = strategy_result_dict[symbol].value[index]
+            
+            # sell strategy execute
+            if strategy_result_of_day == StrategyResultColumnType.SELL:
+                # cacluate sell_rate
+                total_stock_length = buy_df['bucket'].sum()
+                sell_cnt = math.ceil(
+                    (weight_score / 100) * total_stock_length)
+                if sell_cnt >= total_stock_length:
+                    sell_cnt = total_stock_length
+                sell_profit = 0.0
+                while buy_list != []:
+                    if sell_cnt == 0:
+                        break
+                    profit_index = buy_list.pop()
+                    bucket_cnt = stock_bucket_df.at[profit_index, 'bucket']
+                    if bucket_cnt < sell_cnt:
+                        sell_profit += (bucket_cnt * stock_profit_hash_table[symbol].at[index, profit_index]) / total_bucket_cnt
+                        sell_cnt -= bucket_cnt
+                        total_bucket_cnt -= bucket_cnt
+                        stock_bucket_df.at[profit_index, 'bucket'] = 0
+                        bucket_cnt = 0
+                    else:  # bucket_cnt >= sell_cnt
+                        sell_profit += (sell_cnt * stock_profit_hash_table[symbol].at[index, profit_index]) / total_bucket_cnt
+                        stock_bucket_df.at[profit_index, 'bucket'] -= sell_cnt
+                        total_bucket_cnt -= sell_cnt
+                        sell_cnt = 0
+                total_potential_profit -= sell_profit
+                backtest_result_raw.at[index, 'total_profit'] += sell_profit
+            backtest_result_raw.at[index, 'total_potential_profit'] = total_potential_profit
 
         # TODO: post_strategy_execute
         backtest_result_raw.at[index, 'stock_bucket'] = _calc_stock_count(
             stock_bucket_dict)
-        max_bucket_cnt = max(max_bucket_cnt, bucket_cnt)
+        max_bucket_cnt = max(max_bucket_cnt, total_bucket_cnt)
 
         if index == base_index[-2]:
             if verbose:
