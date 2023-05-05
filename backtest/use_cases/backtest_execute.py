@@ -65,7 +65,7 @@ def _calc_stock_profit_hash_table(index_list, stockdata_dict, verbose: bool = Fa
     return result_dict
 
 
-def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function):
+def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_result: bool = False, save_raw_csv_file: str = '', weight_score_function=_basic_weight_score_function):
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
 
@@ -103,6 +103,15 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
     max_bucket_cnt = 0
     index_len = len(base_index)
     visited_index = []
+    if save_raw_csv_file:
+        debug_raw_dict = {
+            "symbol": [],
+            "buy_date": [],
+            "buy_price": [],
+            "sell_date": [],
+            "sell_price": [],
+            "sell_count": [],
+        }
     for num, index in enumerate(base_index, start=1):
         visited_index.append(index)
         if verbose == True:
@@ -133,6 +142,7 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
             strategy_result_of_day, weight_score = strategy_result_dict[
                 stockdata.symbol].value[index]
             if strategy_result_of_day == StrategyResultColumnType.BUY:
+
                 buy_score = math.ceil(weight_score)
                 if stockdata.symbol not in stock_temp_dict:
                     stock_temp_dict[stockdata.symbol] = buy_score
@@ -172,11 +182,25 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
                     if bucket_cnt < sell_cnt:
                         sell_profit += (bucket_cnt * stock_profit_hash_table[symbol].at[index, profit_index]) / total_bucket_cnt
                         sell_cnt -= bucket_cnt
+                        if save_raw_csv_file:
+                            debug_raw_dict['symbol'].append(stockdata.symbol)
+                            debug_raw_dict['buy_date'].append(profit_index)
+                            debug_raw_dict['buy_price'].append(stockdata_dict[symbol].data.at[profit_index, 'close'])
+                            debug_raw_dict['sell_date'].append(index)
+                            debug_raw_dict['sell_price'].append(stockdata_dict[symbol].data.at[index, 'close'])
+                            debug_raw_dict['sell_count'].append(bucket_cnt)
                         stock_bucket_df.at[profit_index, 'bucket'] = 0
                         bucket_cnt = 0
                     else:  # bucket_cnt >= sell_cnt
                         sell_profit += (sell_cnt * stock_profit_hash_table[symbol].at[index, profit_index]) / total_bucket_cnt
                         stock_bucket_df.at[profit_index, 'bucket'] -= sell_cnt
+                        if save_raw_csv_file:
+                            debug_raw_dict['symbol'].append(stockdata.symbol)
+                            debug_raw_dict['buy_date'].append(profit_index)
+                            debug_raw_dict['buy_price'].append(stockdata_dict[symbol].data.at[profit_index, 'close'])
+                            debug_raw_dict['sell_date'].append(index)
+                            debug_raw_dict['sell_price'].append(stockdata_dict[symbol].data.at[index, 'close'])
+                            debug_raw_dict['sell_count'].append(sell_cnt)
                         sell_cnt = 0
                 total_bucket_cnt -= tmp_sell_cnt
                 total_potential_profit -= sell_profit
@@ -204,6 +228,9 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
         lambda r: _recalc_profit(r, max_bucket_cnt, 'total_potential_profit'), axis=1)
     backtest_result_raw = backtest_result_raw.drop(
         ['shift_stock_bucket'], axis=1)
+    if save_raw_csv_file:
+        sell_df = pd.DataFrame(debug_raw_dict)
+        sell_df.to_csv(save_raw_csv_file)
     return ResponseSuccess(BacktestResult(value=backtest_result_raw))
     # except Exception as e:
     #    exc_type, exc_obj, exc_tb = sys.exc_info()
