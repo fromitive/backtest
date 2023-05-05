@@ -60,7 +60,7 @@ def _calc_stock_profit_hash_table(index_list, stockdata_dict, verbose: bool = Fa
         copy_df = stockdata_dict[symbol].data
 
         for i in range(index_len):
-            result_dict[symbol][copy_df.index[i]] = (copy_df['close'] - copy_df['close'][copy_df.index[i]]) / copy_df['close'] 
+            result_dict[symbol][copy_df.index[i]] = (copy_df['close'] - copy_df['close'][copy_df.index[i]]) / copy_df['close'][copy_df.index[i]] 
         result_dict[symbol] = result_dict[symbol]  # use example e.g result_dict['BTC']['previous_index']['current_index']
     return result_dict
 
