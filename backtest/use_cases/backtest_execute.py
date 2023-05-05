@@ -171,9 +171,9 @@ def backtest_execute(backtest: Backtest, verbose: bool = False, save_strategy_re
                     bucket_cnt = stock_bucket_df.at[profit_index, 'bucket']
                     if bucket_cnt < sell_cnt:
                         sell_profit += (bucket_cnt * stock_profit_hash_table[symbol].at[index, profit_index]) / total_bucket_cnt
+                        sell_cnt -= bucket_cnt
                         stock_bucket_df.at[profit_index, 'bucket'] = 0
                         bucket_cnt = 0
-                        sell_cnt -= bucket_cnt
                     else:  # bucket_cnt >= sell_cnt
                         sell_profit += (sell_cnt * stock_profit_hash_table[symbol].at[index, profit_index]) / total_bucket_cnt
                         stock_bucket_df.at[profit_index, 'bucket'] -= sell_cnt
