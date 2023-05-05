@@ -163,11 +163,11 @@ def sma_multi_big_stock_function(data: StockData, weight: int, name: str, big_st
 
 def _calculate_rsi(data, period):
     delta = data.diff().dropna()
-    gain = delta.where(delta > 0, 0)
-    loss = -delta.where(delta < 0, 0)
+    gain = delta.clip(lower=0)
+    loss = -1 * delta.clip(upper=0)
 
-    avg_gain = gain.rolling(window=period).mean()
-    avg_loss = loss.rolling(window=period).mean()
+    avg_gain = gain.ewm(com=period, adjust=False).mean()
+    avg_loss = loss.ewm(com=period, adjust=False).mean()
 
     rs = avg_gain / avg_loss
     rsi = 100 - (100 / (1 + rs))
@@ -287,6 +287,7 @@ def _buyonly_strategy(row: pd.Series, name: str):
 def _basic_weight_score_function(first: int, second: int, third: int):
     return ((first + 1) * 2) / \
         (1 + second + third)
+
 
 def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function):
     strategy_total_result = pd.DataFrame(
