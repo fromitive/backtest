@@ -97,6 +97,5 @@ def test_backtest_execute_without_options(strategy_execute_result, strategy_list
     assert isinstance(backtest_result.value, pd.DataFrame)
     assert backtest_result.value.index[0].strftime("%Y-%m-%d") == '2022-01-01'
     assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
-    assert list(backtest_result.value.columns) == ['total_profit',
-                                                   'stock_bucket',
-                                                   'total_potential_profit']
+    assert list(backtest_result.value.columns) == [
+        'current_money', 'stock_bucket', 'total_potential_earn', 'total_potential_profit']
