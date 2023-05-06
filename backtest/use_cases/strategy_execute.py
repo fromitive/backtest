@@ -125,6 +125,57 @@ def sell_rate_function(data: StockData, weight: int, name: str,
     return temp_df[[name]]
 
 
+def sell_rate_cusmtom_function(data: StockData, weight: int, name: str,
+                               sell_rolling: int = 30, sell_rate: float = 0.5, keep_weight: float = -1):
+    temp_df = data.data.copy()
+    temp_df['sell_rolling'] = temp_df['low'].rolling(sell_rolling).min()
+    """
+    strategyfunction here 
+    """
+    def _sell_rate(r: pd.Series):
+        if pd.isna(r.sell_rolling) or r.sell_rolling == 0.0:
+            return (StrategyResultColumnType.KEEP, 0)
+        else:
+            maximum_price = r['high']
+            sell_rolling = r['sell_rolling']
+            if sell_rolling * sell_rate <= maximum_price:
+                return (StrategyResultColumnType.SELL, weight)
+        if keep_weight < 0:
+            return (StrategyResultColumnType.KEEP, weight)
+        else:
+            return (StrategyResultColumnType.KEEP, keep_weight)
+
+    temp_df[name] = temp_df.apply(lambda r: _sell_rate(r), axis=1)
+    return temp_df[[name]]
+
+
+def buy_rate_custom_function(data: StockData, weight: int, name: str,
+                             buy_rolling: int = 30, buy_rate: float = 0.5, keep_weight: float = -1):
+    temp_df = data.data.copy()
+    temp_df['buy_rolling'] = temp_df['high'].rolling(
+        buy_rolling).max()
+    """
+    strategyfunction here
+    """
+
+    def _buy_rate(r: pd.Series):
+        if pd.isna(r.buy_rolling) or r.buy_rolling == 0.0:
+            return (StrategyResultColumnType.KEEP, 0)
+        else:
+            minimum_price = r['low']
+            buy_rolling = r['buy_rolling']
+            if buy_rolling * buy_rate >= minimum_price:
+                return (StrategyResultColumnType.BUY, weight)
+        # keep weight calculate
+        if keep_weight < 0:
+            return (StrategyResultColumnType.KEEP, weight)
+        else:
+            return (StrategyResultColumnType.KEEP, keep_weight)
+
+    temp_df[name] = temp_df.apply(lambda r: _buy_rate(r), axis=1)
+    return temp_df[[name]]
+
+
 def sma_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, rolling=100):
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
