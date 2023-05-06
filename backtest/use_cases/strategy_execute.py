@@ -125,8 +125,8 @@ def sell_rate_function(data: StockData, weight: int, name: str,
     return temp_df[[name]]
 
 
-def sell_rate_cusmtom_function(data: StockData, weight: int, name: str,
-                               sell_rolling: int = 30, sell_rate: float = 0.5, keep_weight: float = -1):
+def sell_rate_custom_function(data: StockData, weight: int, name: str,
+                              sell_rolling: int = 30, sell_rate: float = 0.5, keep_weight: float = -1):
     temp_df = data.data.copy()
     temp_df['sell_rolling'] = temp_df['low'].rolling(sell_rolling).min()
     """
