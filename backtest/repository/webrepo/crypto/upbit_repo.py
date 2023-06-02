@@ -22,6 +22,7 @@ class UpbitRepo:
         self.start_time = ''
         self.end_time = ''
         self.chart_interval_kind = ''
+        self.unit = 'D'
 
     def get(self, filters=None):
         if filters:
@@ -43,8 +44,10 @@ class UpbitRepo:
                 else:
                     self.chart_interval_kind = '{}/{}'.format(
                         'minutes', interval_value)
+                    self.unit = 'M'
             elif unit == 'd':
                 self.chart_interval_kind = 'days'
+                self.unit = 'D'
             else:
                 raise Exception(
                     'request error - this repo not support chart_intervals {} TT'.format(self.chart_intervals))
@@ -118,4 +121,4 @@ class UpbitRepo:
 
         temp_df.rename(columns={'opening_price': 'open', 'high_price': 'high',
                                 'low_price': 'low', 'trade_price': 'close', 'candle_date_time_kst': 'date', 'candle_acc_trade_volume': 'volume'}, inplace=True)
-        return StockData.from_dict(temp_df.to_dict('list'), self.order_currency)
+        return StockData.from_dict(temp_df.to_dict('list'), symbol=self.order_currency, unit=self.unit)

@@ -6,6 +6,7 @@ from backtest.module_compet.pandas import pd
 @dataclasses.dataclass
 class StockData:
     symbol: str = ""
+    unit: str = "D"
     data: pd.DataFrame = dataclasses.field(default_factory=pd.DataFrame)
 
     @classmethod
@@ -22,16 +23,16 @@ class StockData:
                         'low': 'float',
                         'volume': 'float'})
         df.sort_index(ascending=True, inplace=True)
-        return cls(symbol=symbol, data=df)
+        return cls(symbol=symbol, data=df, unit=unit)
 
     @classmethod
-    def from_csv(cls, csv_path, symbol=''):
+    def from_csv(cls, csv_path, symbol='', unit='D'):
         df = pd.read_csv(csv_path)
         df.drop_duplicates(inplace=True)
         df.set_index('date', inplace=True)
         df.index = pd.to_datetime(df.index)
         df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
-        return cls(symbol=symbol, data=df)
+        return cls(symbol=symbol, data=df, unit=unit)
 
     def to_csv(self, csv_path):
         self.data.to_csv(csv_path)

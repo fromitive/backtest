@@ -184,6 +184,11 @@ def sma_big_stock_function(data: StockData, weight: int, name: str, big_stock: S
     """
     response = _dataframe_sma(
         big_stock.data, weight, rolling)
+    if big_stock.unit == 'D' and data.unit == 'M':
+        response.index = pd.to_datetime(response.index)
+        response = response.resample('T').fillna(method='bfill')
+        response = response.reindex(data.data.index, method='ffill')
+
     response = response.rename({'result': name}, axis=1)
     return response[[name]]
 
@@ -208,6 +213,11 @@ def sma_multi_big_stock_function(data: StockData, weight: int, name: str, big_st
     """
     response = _dataframe_sma_multi(
         big_stock.data, weight, rolling_list)
+    if big_stock.unit == 'D' and data.unit == 'M':
+        response.index = pd.to_datetime(response.index)
+        response = response.resample('T').fillna(method='bfill')
+        response = response.reindex(data.data.index)
+
     response = response.rename({'result': name}, axis=1)
     return response[[name]]
 
@@ -248,7 +258,14 @@ def rsi_function(data: StockData, weight: int, name: str, period: int, sell_scor
 def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, period: int, sell_score: int, buy_score: int, keep_weight: int = -1):
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
-    data.data['rsi'] = _calculate_rsi(big_stock.data['close'], period)
+    if big_stock.unit == 'D' and data.unit == 'M':
+        tmp_big_stock = big_stock.data.copy()
+        tmp_big_stock.index = pd.to_datetime(tmp_big_stock.index)
+        tmp_big_stock = tmp_big_stock.resample('T').interpolate()
+        tmp_big_stock = tmp_big_stock.reindex(data.data.index, method='ffill')
+        data.data['rsi'] = _calculate_rsi(tmp_big_stock.data['close'], period)
+    else:
+        data.data['rsi'] = _calculate_rsi(big_stock.data['close'], period)
 
     def _rsi_function(r):
         if r <= buy_score:
@@ -347,6 +364,8 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_s
     strategy_name_list = set([strategy.name for strategy in strategy_list])
     strategy_dict = {bucket_item: 1 for bucket_item in strategy_name_list}
     for strategy in strategy_list:
+        if strategy.weight == 0:  # skip if strategy weight is zero
+            continue
         if strategy.name in strategy_bucket:
             strategy_dict[strategy.name] += 1
             strategy.name = "{}_{}".format(

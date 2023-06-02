@@ -25,4 +25,4 @@ class FinanceRepo:
         temp_df.index.name = 'date'
         temp_df.index = temp_df.index.strftime('%Y-%m-%d %H:%M:%S')
         temp_df = temp_df[['open', 'high', 'low', 'close', 'volume']]
-        return StockData(symbol=self.order_currency, data=temp_df)
+        return StockData(symbol=self.order_currency, data=temp_df, unit='D')

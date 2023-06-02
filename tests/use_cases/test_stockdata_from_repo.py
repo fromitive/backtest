@@ -48,7 +48,7 @@ def test_stockdata_from_repo_with_cache_enable_if_exist(to_csv_result, read_csv_
     response = stockdata_from_repo(repo, request, cache=True)
 
     read_csv_result.assert_called_with(
-        '{}/{}_ETH_2019-09-01_{}.csv'.format(STOCKDATA_CSVREPO_DIR_PATH, type(repo).__name__, str_today))
+        '{}/{}_ETH_2019-09-01_{}_1d.csv'.format(STOCKDATA_CSVREPO_DIR_PATH, type(repo).__name__, str_today))
 
     assert bool(response) is True
     assert isinstance(response.value, StockData)

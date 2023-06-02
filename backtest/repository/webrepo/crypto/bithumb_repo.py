@@ -17,6 +17,7 @@ class BithumbRepo:
         self.chart_intervals = '24h'
         self.from_date = ''
         self.to_date = ''
+        self.unit = 'D'
 
     def get(self, filters=None):
         if filters:
@@ -29,6 +30,11 @@ class BithumbRepo:
             if self.chart_intervals not in ['1m', '3m', '5m', '10m', '30m', '1h', '6h', '12h', '24h']:
                 raise Exception(
                     'request error - this repo not support chart_intervals {} TT'.format(self.chart_intervals))
+
+            if self.chart_intervals == '24h':
+                self.unit = 'D'
+            else:
+                self.unit = 'M'
 
         request_url = self.API_URL.format(
             order_currency=self.order_currency,
@@ -51,6 +57,6 @@ class BithumbRepo:
             if self.to_date:
                 temp_df = temp_df.loc[:self.to_date]
 
-            return StockData.from_dict(temp_df.to_dict('list'), self.order_currency)
+            return StockData.from_dict(temp_df.to_dict('list'), symbol=self.order_currency, unit=self.unit)
         else:
             raise Exception('request error', response.status_code)
