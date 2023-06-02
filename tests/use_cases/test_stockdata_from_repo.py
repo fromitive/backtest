@@ -32,9 +32,9 @@ def test_stockdata_from_repo(sample_empty_stockdata):
     assert response.value == sample_empty_stockdata
 
 
-@ mock.patch('os.makedirs')
-@ mock.patch('pandas.read_csv')
-@ mock.patch('pandas.DataFrame.to_csv')
+@mock.patch('os.makedirs')
+@mock.patch('pandas.read_csv')
+@mock.patch('pandas.DataFrame.to_csv')
 def test_stockdata_from_repo_with_cache_enable_if_exist(to_csv_result, read_csv_result, os_makedirs, sample_empty_stockdata_df):
     os_makedirs.return_value = None
     to_csv_result.return_value = None
