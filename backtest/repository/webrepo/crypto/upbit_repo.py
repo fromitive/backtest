@@ -73,7 +73,7 @@ class UpbitRepo:
                 if result_list == []:
                     break
                 data_last_date = datetime.strptime(
-                    result_list[-1]['candle_date_time_kst'], '%Y-%m-%dT%H:%M:%S')
+                    result_list[-1]['candle_date_time_utc'], '%Y-%m-%dT%H:%M:%S')
                 if self.chart_intervals == '24h':
                     data_last_date = data_last_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
@@ -98,7 +98,7 @@ class UpbitRepo:
                 flag = False
                 while result_list[0] != result_list[idx]:
                     compare_date = datetime.strptime(
-                        result_list[idx]['candle_date_time_kst'], '%Y-%m-%dT%H:%M:%S')
+                        result_list[idx]['candle_date_time_utc'], '%Y-%m-%dT%H:%M:%S')
                     compare_date = compare_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
                     if compare_date == self.from_date:
