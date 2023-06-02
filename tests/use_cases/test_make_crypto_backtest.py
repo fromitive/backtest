@@ -12,9 +12,9 @@ from backtest.use_cases.make_crypto_backtest import (
 
 @pytest.fixture(scope='function')
 def sample_selector_reference_list():
-    btc_result = {'date': ['2020-01-01', '2020-01-02', '2020-01-03'],
+    btc_result = {'date': ['2020-01-01 00:00:00', '2020-01-02 00:00:00', '2020-01-03 00:00:00'],
                   'marketcap': [1.1, 2.2, 3.3]}
-    eth_result = {'date': ['2020-01-02', '2020-01-03'],
+    eth_result = {'date': ['2020-01-02 00:00:00', '2020-01-03 00:00:00'],
                   'marketcap': [4.4, 5.5]}
     btc_sel_ref = SelectorReference.from_dict(btc_result, symbol='BTC')
     eth_sel_ref = SelectorReference.from_dict(eth_result, symbol='ETH')
@@ -46,10 +46,8 @@ def test_make_crypto_selector_marketcap(coingeckorepo, get_bithumb_symbol, sampl
     assert isinstance(response.value, SelectorReference)
     assert list(response.value.data.columns) == ['BTC', 'ETH']  # 'BTC','ETH'
     assert response.value.symbol == 'BITHUMB'
-    assert datetime.strftime(
-        response.value.data.index[0], "%Y-%m-%d") == from_date
-    assert datetime.strftime(
-        response.value.data.index[-1], "%Y-%m-%d") == to_date
+    assert response.value.data.index[0] == '2020-01-01 00:00:00'
+    assert response.value.data.index[-1] == '2020-01-03 00:00:00'
 
 
 """ TODO

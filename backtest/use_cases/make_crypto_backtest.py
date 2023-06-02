@@ -26,6 +26,7 @@ from backtest.use_cases.stockdata_from_repo import stockdata_from_repo
 SELECTOR_REFERENCE_CSV_REPO_PATH = "backtest/csvrepo/selector_reference/{repo_name}_{symbol}_{from_date}_{to_date}.csv"
 SELECTOR_REFERENCE_CSV_REPO_DIR_PATH = "backtest/csvrepo/selector_reference"
 
+
 class MarketType(Enum):
     BITHUMB = 1
     UPBIT = 2
@@ -89,8 +90,7 @@ def make_crypto_selector_reference_makretcap(market: MarketType, from_date: str 
             return ResponseFailure(type_=ResponseTypes.SYSTEM_ERROR, message='symbol : {} fail to load from coingecko repository'.format(symbol))
         else:  # ResponseSuccess
             selector_reference_list.append(response.value)
-    standardize_selector_reference(
-        selector_reference_list, to_date=to_date)
+    standardize_selector_reference(selector_reference_list)
     selector_reference_data = pd.DataFrame(
         index=selector_reference_list[0].data.index, columns=symbol_list)
     for selector_reference in selector_reference_list:

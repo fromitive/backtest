@@ -35,7 +35,8 @@ def _validate_date_format(date_text: str):
 def build_stock_data_from_repo_request(filters=None):
     accepted_filters = ["order__eq", "payment__eq",
                         "chart_interval__eq", "from__eq", "to__eq", "start_time__eq", "end_time__eq"]
-    accepted_chart_interval_filters = ['24h', '1d', '30m']
+    accepted_chart_interval_filters = ['24h', '1d',
+                                       '30m', '1m', '3m', '5m', '10m', '30m', '60m', '240m', '1h', '6h', '12h']
     accepted_payment_filters = ['KRW', 'USDT']
     invalid_req = StockDataFromRepoInvalidRequest()
 

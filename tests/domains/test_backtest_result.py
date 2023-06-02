@@ -33,6 +33,7 @@ def dict_backtest_result_dataframe(dict_backtest_result):
                       columns=['stock_bucket', 'total_profit', 'date'])
     df.set_index('date', inplace=True)
     df.index = pd.to_datetime(df.index)
+    df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
     return df
 
 
@@ -49,7 +50,6 @@ def test_init_backtest_result_without_parameters():
 def test_init_backtest_result_from_dict(dict_backtest_result):
     backtest_result = BacktestResult.from_dict(dict_backtest_result)
     assert isinstance(backtest_result.value, pd.DataFrame)
-    assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
     assert list(backtest_result.value.columns) == ['stock_bucket',
                                                    'total_profit',
                                                    'total_potential_profit',

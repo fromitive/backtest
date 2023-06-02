@@ -31,7 +31,7 @@ class BinanceRepo:
             ) if 'order__eq' in filter else 'BTC'
             self.payment_currency = filters['payment__eq'].upper(
             ) if 'payment__eq' in filter else 'USDT'
-            self.chart_intervals = filters['chart_intervals__eq'] if 'chart_intervals__eq' in filter else '1d'
+            self.chart_intervals = filters['chart_interval__eq'] if 'chart_interval__eq' in filter else '1d'
             if self.chart_intervals == '24h':
                 self.chart_intervals = '1d'
             self.from_date = datetime.strptime(

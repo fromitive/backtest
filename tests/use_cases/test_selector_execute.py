@@ -27,7 +27,7 @@ def sample_selector_result():
     df = pd.DataFrame(dict,
                       columns=['SYMBOL1', 'SYMBOL2', 'date'])
     df.set_index('date', inplace=True)
-    df.index = pd.to_datetime(df.index, dayfirst=True)
+    df.index = pd.to_datetime(df.index)
     return ResponseSuccess(df)
 
 

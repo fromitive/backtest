@@ -18,7 +18,8 @@ class SelectorResult:
         df = pd.DataFrame(adict,
                           columns=[item for item in adict.keys()])
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index, dayfirst=True)
+        df.index = pd.to_datetime(df.index)
+        df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
         return cls(value=df)
 
     def __len__(self):

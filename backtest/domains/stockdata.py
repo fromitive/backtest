@@ -9,12 +9,13 @@ class StockData:
     data: pd.DataFrame = dataclasses.field(default_factory=pd.DataFrame)
 
     @classmethod
-    def from_dict(cls, dict_data, symbol=''):
+    def from_dict(cls, dict_data, symbol='', unit='D'):
         df = pd.DataFrame(dict_data, columns=['open', 'high', 'low', 'close',
                                               'volume', 'date'])
         df.drop_duplicates(inplace=True)
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index, dayfirst=True).normalize()
+        df.index = pd.to_datetime(df.index)
+        df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
         df = df.astype({'open': 'float',
                         'high': 'float',
                         'close': 'float',
@@ -28,7 +29,8 @@ class StockData:
         df = pd.read_csv(csv_path)
         df.drop_duplicates(inplace=True)
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index, dayfirst=True).normalize()
+        df.index = pd.to_datetime(df.index)
+        df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
         return cls(symbol=symbol, data=df)
 
     def to_csv(self, csv_path):

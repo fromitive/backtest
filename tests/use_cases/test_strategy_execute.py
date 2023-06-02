@@ -80,6 +80,7 @@ def strategy_result_data_frame(dict_strategy_result):
                       columns=['name', 'date'])
     df.set_index('date', inplace=True)
     df.index = pd.to_datetime(df.index)
+    df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
     return df
 
 

@@ -32,7 +32,8 @@ def selector_result_dataframe(dict_selector_result1):
     df = pd.DataFrame(dict_selector_result1,
                       columns=['name', 'date'])
     df.set_index('date', inplace=True)
-    df.index = pd.to_datetime(df.index, dayfirst=True)
+    df.index = pd.to_datetime(df.index)
+    df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
     return df
 
 
@@ -46,7 +47,7 @@ def test_init_selector_result_without_parameter():
 def test_init_strategy_result_with_parameter(selector_result_dataframe):
     selector_result = SelectorResult(value=selector_result_dataframe)
     assert isinstance(selector_result.value, pd.DataFrame)
-    assert isinstance(selector_result.value.index, pd.DatetimeIndex)
+    # assert isinstance(selector_result.value.index, pd.DatetimeIndex)
     assert selector_result.value.columns == ['name']
     assert len(selector_result) == 4
     assert len(selector_result.value['name'].iloc[0]) == 2
@@ -57,6 +58,6 @@ def test_init_strategy_result_from_dict(dict_selector_result2):
         dict_selector_result2)
     assert len(selector_result) == 5
     assert isinstance(selector_result.value, pd.DataFrame)
-    assert isinstance(selector_result.value.index, pd.DatetimeIndex)
+    # assert isinstance(selector_result.value.index, pd.DatetimeIndex)
     assert selector_result.value.columns == ['strategy1']
     assert len(selector_result.value['strategy1'].iloc[0]) == 2

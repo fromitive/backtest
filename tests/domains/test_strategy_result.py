@@ -32,7 +32,8 @@ def strategy_result_data_frame(dict_strategy_result):
     df = pd.DataFrame(dict_strategy_result,
                       columns=['name', 'date'])
     df.set_index('date', inplace=True)
-    df.index = pd.to_datetime(df.index, dayfirst=True)
+    df.index = pd.to_datetime(df.index)
+    df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
     return df
 
 
@@ -46,7 +47,7 @@ def test_init_strategy_result_without_parameter():
 def test_init_strategy_result_with_parameter(strategy_result_data_frame):
     strategy_result = StrategyResult(value=strategy_result_data_frame)
     assert isinstance(strategy_result.value, pd.DataFrame)
-    assert isinstance(strategy_result.value.index, pd.DatetimeIndex)
+    # assert isinstance(strategy_result.value.index, pd.DatetimeIndex)
     assert strategy_result.value.columns == ['name']
     assert strategy_result.target == 'ALL'
     assert len(strategy_result) == 4
@@ -58,7 +59,7 @@ def test_init_strategy_result_from_dict(dict_strategy_result2):
         dict_strategy_result2, target='TEST')
     assert len(strategy_result) == 5
     assert isinstance(strategy_result.value, pd.DataFrame)
-    assert isinstance(strategy_result.value.index, pd.DatetimeIndex)
+    # assert isinstance(strategy_result.value.index, pd.DatetimeIndex)
     assert strategy_result.value.columns == ['strategy1']
     assert strategy_result.target == 'TEST'
     assert len(strategy_result.value['strategy1'].iloc[0]) == 2

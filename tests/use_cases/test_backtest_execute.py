@@ -65,11 +65,11 @@ def dict_strategy_result():
                      (StrategyResultColumnType.SELL, 1),
                      (StrategyResultColumnType.KEEP, 1),
                      (StrategyResultColumnType.KEEP, 1)],
-            'date': ['2022-01-01',
-                     '2022-01-02',
-                     '2022-01-03',
-                     '2022-01-04',
-                     '2022-01-05']}
+            'date': ['2022-01-01 00:00:00',
+                     '2022-01-02 00:00:00',
+                     '2022-01-03 00:00:00',
+                     '2022-01-04 00:00:00',
+                     '2022-01-05 00:00:00']}
 
 
 @pytest.fixture(scope='function')
@@ -78,6 +78,7 @@ def _inner_strategy_execute_result(dict_strategy_result):
                       columns=['name', 'date'])
     df.set_index('date', inplace=True)
     df.index = pd.to_datetime(df.index)
+    df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
     return ResponseSuccess(df)
 
 
@@ -95,7 +96,7 @@ def test_backtest_execute_without_options(strategy_execute_result, strategy_list
     backtest_result = response.value
     assert isinstance(backtest_result, BacktestResult)
     assert isinstance(backtest_result.value, pd.DataFrame)
-    assert backtest_result.value.index[0].strftime("%Y-%m-%d") == '2022-01-01'
-    assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
+    assert backtest_result.value.index[0] == '2022-01-01 00:00:00'
+    # assert isinstance(backtest_result.value.index, pd.DatetimeIndex)
     assert list(backtest_result.value.columns) == [
         'current_money', 'stock_bucket', 'total_potential_earn', 'total_potential_profit']

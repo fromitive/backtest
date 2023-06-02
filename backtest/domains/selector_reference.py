@@ -14,7 +14,8 @@ class SelectorReference:
         df = pd.DataFrame(dict_data)
         df.drop_duplicates(inplace=True)
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index, dayfirst=True).normalize()
+        df.index = pd.to_datetime(df.index, dayfirst=True)
+        df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
         if len(type_options):
             df = df.astype(type_options)
         else:
@@ -27,7 +28,8 @@ class SelectorReference:
         df = pd.read_csv(csv_path)
         df.drop_duplicates(inplace=True)
         df.set_index('date', inplace=True)
-        df.index = pd.to_datetime(df.index, dayfirst=True).normalize()
+        df.index = pd.to_datetime(df.index, dayfirst=True)
+        df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
         if len(type_options):
             df = df.astype(type_options)
         else:

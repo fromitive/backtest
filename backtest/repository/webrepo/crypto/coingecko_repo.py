@@ -42,6 +42,7 @@ class CoinGeckoRepo:
             from_timestamp=self.from_timestamp,
             to_timestamp=self.to_timestamp)
         response = requests.get(request_url, headers=self.API_HEADERS)
+
         if response.status_code == 200:
             dict_data = response.json().get('stats')
             temp_df = pd.DataFrame(

@@ -1,18 +1,14 @@
 import json
-from datetime import datetime
-
 import requests
 
 from backtest.domains.stockdata import StockData
 from backtest.module_compet.pandas import pd
 
 
-def generate_empty_stockData(from_date='1999-01-01', to_date=datetime.now().strftime('%Y-%m-%d'), symbol=''):
-    if to_date == '':
-        to_date = datetime.now().strftime('%Y-%m-%d')
-    date_series = pd.date_range(start=from_date, end=to_date)
+def generate_empty_stockData(indexes, symbol=''):
+
     df = pd.DataFrame(columns=['open', 'high', 'low', 'close',
-                               'volume'], index=date_series).fillna(0)
+                               'volume'], index=indexes).fillna(0)
     df = df.rename_axis('date')
     return StockData(symbol=symbol, data=df)
 
@@ -25,6 +21,7 @@ def get_greed_fear_index():
     df['timestamp'] = df['timestamp'].astype('int')
     df['date'] = pd.to_datetime(df['timestamp'], unit='s')
     df.set_index('date', inplace=True)
+    df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
     df = df[['value', 'value_classification']]
     df.astype({'value': 'int'})
     df.sort_index()
