@@ -36,7 +36,7 @@ def build_stock_data_from_repo_request(filters=None):
     accepted_filters = ["order__eq", "payment__eq",
                         "chart_interval__eq", "from__eq", "to__eq", "start_time__eq", "end_time__eq"]
     accepted_chart_interval_filters = ['24h', '1d',
-                                       '30m', '1m', '3m', '5m', '10m', '30m', '60m', '240m', '1h', '6h', '12h']
+                                       '30m', '1m', '3m', '5m', '10m', '15m', ' 30m', '60m', '240m', '1h', '6h', '12h']
     accepted_payment_filters = ['KRW', 'USDT']
     invalid_req = StockDataFromRepoInvalidRequest()
 
@@ -57,12 +57,7 @@ def build_stock_data_from_repo_request(filters=None):
                         "filters", "key {} - value {} cannot be used".format(
                             key, value)
                     )
-                if value == '30m':
-                    if 'start_time__eq' not in filters and 'end_time__eq' not in filters:
-                        invalid_req.add_error(
-                            "filters", "key {} must set parameter start_time__eq and end_time__eq".format(
-                                key)
-                        )
+
             if key == 'payment__eq':
                 if value not in accepted_payment_filters:
                     invalid_req.add_error(
