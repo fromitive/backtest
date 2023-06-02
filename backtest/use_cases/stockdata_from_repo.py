@@ -7,7 +7,7 @@ from backtest.request.stockdata_from_repo import (
 from backtest.response import (ResponseFailure, ResponseSuccess, ResponseTypes,
                                build_response_from_invalid_request)
 
-STOCKDATA_CSV_REPO_PATH = "backtest/csvrepo/stockdata/{repo_name}_{order}_{from_date}_{to_date}.csv"
+STOCKDATA_CSV_REPO_PATH = "backtest/csvrepo/stockdata/{repo_name}_{order}_{from_date}_{to_date}_{chart_interval}.csv"
 STOCKDATA_CSV_REPO_DIR_PATH = "backtest/csvrepo/stockdata"
 
 
@@ -27,8 +27,10 @@ def stockdata_from_repo(repo, request, cache=False):
         order = request.filters['order__eq'] if 'order__eq' in request.filters else 'NOSYM'
         from_date = request.filters['from__eq'] if 'from__eq' in request.filters else '1990-01-01'
         to_date = request.filters['to__eq'] if 'to__eq' in request.filters else str_today
+        chart_interval = request.filters['chart_interval__eq'] if 'to__eq' in request.filters else '1d'
+
     CSV_PATH = STOCKDATA_CSV_REPO_PATH.format(
-        repo_name=repo_name, order=order, from_date=from_date, to_date=to_date)
+        repo_name=repo_name, order=order, from_date=from_date, to_date=to_date, chart_interval=chart_interval)
 
     if cache:
         try:
