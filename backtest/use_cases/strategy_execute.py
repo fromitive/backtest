@@ -1,13 +1,13 @@
 from typing import List
 
-import numpy
-
 from backtest.domains.stockdata import StockData
 from backtest.domains.strategy import Strategy, StrategyExecuteFlagType
 from backtest.domains.strategy_result import (StrategyResult,
                                               StrategyResultColumnType)
 from backtest.module_compet.pandas import pd
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
+from ta.momentum import RSIIndicator
+import numpy as np
 
 
 def basic_function(data: StockData, weight: int, name: str):
@@ -223,22 +223,15 @@ def sma_multi_big_stock_function(data: StockData, weight: int, name: str, big_st
 
 
 def _calculate_rsi(data, period):
-    delta = data.diff().dropna()
-    gain = delta.clip(lower=0)
-    loss = -1 * delta.clip(upper=0)
+    rsi = RSIIndicator(close=data.data['close'], window=period)
 
-    avg_gain = gain.ewm(com=period, adjust=False).mean()
-    avg_loss = loss.ewm(com=period, adjust=False).mean()
-
-    rs = avg_gain / avg_loss
-    rsi = 100 - (100 / (1 + rs))
-    return rsi
+    return rsi.rsi()
 
 
 def rsi_function(data: StockData, weight: int, name: str, period: int, sell_score: int, buy_score: int, keep_weight: int = -1):
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
-    data.data['rsi'] = _calculate_rsi(data.data['close'], period)
+    data.data['rsi'] = _calculate_rsi(data, period)
 
     def _rsi_function(r):
         if r <= buy_score:
