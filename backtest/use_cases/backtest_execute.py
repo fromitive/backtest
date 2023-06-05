@@ -25,6 +25,20 @@ def _calc_stock_count(stock_bucket):
     return summary_bucket
 
 
+def _init_backtest_result(column_name_and_type: dict, base_index: pd.Index):
+    backtest_result_raw = pd.DataFrame(
+        index=base_index, columns=list(column_name_and_type.keys()))
+    for column_name in column_name_and_type:
+        if column_name_and_type[column_name] == 'float':
+            backtest_result_raw[column_name] = 0.0
+        elif column_name_and_type[column_name] == 'object':
+            backtest_result_raw[column_name] = np.nan
+            backtest_result_raw[column_name].astype('object')
+            backtest_result_raw.at[backtest_result_raw.index[0],
+                                   column_name] = 'DUMMY'
+    return backtest_result_raw
+
+
 def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, invest_rate: float = 0.01, minimum_buy_count: float = 5.0, verbose: bool = False, save_strategy_result: bool = False, save_raw_csv_file: str = '', weight_score_function=_basic_weight_score_function):
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
@@ -37,8 +51,6 @@ def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, 
     stock_bucket_dict = {
         stockdata.symbol: pd.DataFrame(columns=['bucket', 'invest_money'], index=base_index).fillna(0) for stockdata in backtest.stockdata_list}
     stock_temp_dict = dict()
-    # stock_profit_hash_table = _calc_stock_profit_hash_table(
-    #    index_list=base_index, stockdata_dict=stockdata_dict, verbose=verbose)
 
     # divide pre, post strategy list
     pre_strategy_list = [
@@ -48,17 +60,15 @@ def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, 
     #     strategy for strategy in backtest.strategy_list if strategy.after]
 
     # init backtest_result
-    backtest_result_raw = pd.DataFrame(
-        index=base_index, columns=['current_money', 'stock_bucket', 'total_potential_earn', 'total_potential_profit'])
-    backtest_result_raw['current_money'] = 0.0
-    backtest_result_raw['stock_bucket'] = np.nan
-    backtest_result_raw['stock_bucket'].astype('object')
-    backtest_result_raw.at[backtest_result_raw.index[0],
-                           'stock_bucket'] = 'DUMMY'
-    backtest_result_raw['total_potential_earn'] = 0.0
-    backtest_result_raw['total_potential_profit'] = 0.0
+    column_name_and_type = {
+        'current_money': 'float',
+        'stock_bucket': 'object',
+        'total_potential_earn': 'float',
+        'total_potential_profit': 'float'
+    }
+    backtest_result_raw = _init_backtest_result(
+        column_name_and_type, base_index)
 
-    # loop base_index
     total_bucket_cnt = 0
     index_len = len(base_index)
     visited_index = []
@@ -73,6 +83,7 @@ def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, 
         }
     current_invest_money = init_invest_money
     buy_money = init_invest_money * invest_rate
+    # loop base_index
     for num, index in enumerate(base_index, start=1):
         visited_index.append(index)
         if verbose:
@@ -101,6 +112,7 @@ def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, 
                     return ResponseFailure(ResponseTypes.SYSTEM_ERROR, "[ERROR] strategy_execute")
             strategy_result_of_day, weight_score = strategy_result_dict[
                 stockdata.symbol].value[index]
+
             # if minimum buy count less than weight_score don't buy
             if weight_score < minimum_buy_count and strategy_result_of_day == StrategyResultColumnType.BUY:
                 strategy_result_dict[stockdata.symbol].value[index] = (
