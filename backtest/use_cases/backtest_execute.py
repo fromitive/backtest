@@ -25,48 +25,6 @@ def _calc_stock_count(stock_bucket):
     return summary_bucket
 
 
-def _recalc_profit(backtest_result: pd.Series, max_bucket_cnt: int, column_name: str):
-    if max_bucket_cnt == 0:
-        return 0.0
-    profit = backtest_result[column_name]
-    bucket_cnt = 0
-    if backtest_result['shift_stock_bucket'] is not None:
-        for symbol in backtest_result['shift_stock_bucket']:
-            bucket_cnt += backtest_result['shift_stock_bucket'][symbol]
-    return profit * (bucket_cnt / max_bucket_cnt)
-
-
-def _calc_diff(bucket_item, symbol, stockdata_dict, index):
-    profit_index = bucket_item
-    return stockdata_dict[symbol].data['close'][index] - \
-        stockdata_dict[symbol].data['close'][profit_index]
-
-
-def _calc_symbol_profit(profit_price: float, current_price: float, bucket_cnt: int) -> float:
-    profit_earn = current_price - profit_price
-    symbol_profit = (profit_earn / profit_price) / bucket_cnt
-    return symbol_profit
-
-
-def _calc_stock_profit_hash_table(index_list, stockdata_dict, verbose: bool = False):
-    result_dict = {
-        symbol: pd.DataFrame(index=index_list) for symbol in stockdata_dict}
-    stock_len = len(result_dict)
-    index_len = len(index_list)
-    for count, symbol in enumerate(result_dict, start=1):
-        if verbose:
-            print("\rgenerate stock profit table {current} / {total}".format(
-                current=count, total=stock_len), end='', flush=True)
-        copy_df = stockdata_dict[symbol].data
-
-        for i in range(index_len):
-            result_dict[symbol][copy_df.index[i]] = (
-                copy_df['close'] - copy_df['close'][copy_df.index[i]]) / copy_df['close'][copy_df.index[i]]
-        # use example e.g result_dict['BTC']['previous_index']['current_index']
-        result_dict[symbol] = result_dict[symbol]
-    return result_dict
-
-
 def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, invest_rate: float = 0.01, minimum_buy_count: float = 5.0, verbose: bool = False, save_strategy_result: bool = False, save_raw_csv_file: str = '', weight_score_function=_basic_weight_score_function):
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
@@ -256,8 +214,3 @@ def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, 
         sell_df = pd.DataFrame(debug_raw_dict)
         sell_df.to_csv(save_raw_csv_file)
     return ResponseSuccess(BacktestResult(value=backtest_result_raw))
-    # except Exception as e:
-    #    exc_type, exc_obj, exc_tb = sys.exc_info()
-    #    fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
-    #    print(exc_type, fname, exc_tb.tb_lineno)
-    #    return ResponseFailure(ResponseTypes.SYSTEM_ERROR, e)
