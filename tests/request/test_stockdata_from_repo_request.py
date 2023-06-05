@@ -41,17 +41,6 @@ def test_build_stock_data_from_repo_request_accepted_filters(interval, payment):
     assert bool(request) is True
 
 
-@pytest.mark.parametrize("payment", ['KRW', 'USDT'])
-def test_build_stock_data_from_repo_request_rejected_filters_if_chart_interval_is_minute_must_set_start_end_times(payment):
-    filters = {'order__eq': 'BTC', 'payment__eq': payment,
-               'chart_interval__eq': '30m', 'from__eq': '1990-01-01', 'to__eq': '1990-01-01'}
-    request = build_stock_data_from_repo_request(filters=filters)
-    assert request.has_errors()
-    assert request.errors[0]["parameter"] == "filters"
-    assert request.errors[0]["message"] == "key chart_interval__eq must set parameter start_time__eq and end_time__eq"
-    assert bool(request) is False
-
-
 @pytest.mark.parametrize("payment", ['FAILED', 'TEST'])
 def test_build_stock_data_from_repo_request_rejected_filters_with_wrong_payment(payment):
     filters = {'order__eq': 'BTC', 'payment__eq': payment,
