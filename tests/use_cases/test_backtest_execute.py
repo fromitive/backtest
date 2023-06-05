@@ -37,9 +37,9 @@ def dict_stock_data_list():
 
 @pytest.fixture(scope='function')
 def strategy_list():
-    strategy1 = Strategy(name='test1')
-    strategy2 = Strategy(name='test2')
-    strategy3 = Strategy(name='test3')
+    strategy1 = Strategy(name='test1', weight=1)
+    strategy2 = Strategy(name='test2', weight=1)
+    strategy3 = Strategy(name='test3', weight=3)
     return [
         strategy1, strategy2, strategy3
     ]
