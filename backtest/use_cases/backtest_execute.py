@@ -39,7 +39,7 @@ def _init_backtest_result(column_name_and_type: dict, base_index: pd.Index):
     return backtest_result_raw
 
 
-def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, invest_rate: float = 0.01, minimum_buy_count: float = 5.0, verbose: bool = False, save_strategy_result: bool = False, save_raw_csv_file: str = '', weight_score_function=_basic_weight_score_function):
+def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, invest_rate: float = 0.01, minimum_buy_count: float = 5.0, verbose: bool = False, save_strategy_result: bool = False, save_raw_csv_file: str = '', weight_score_function=_basic_weight_score_function, plot_package: dict = None):
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
 
@@ -105,7 +105,8 @@ def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, 
             # if not calc pre_strategy_result calc it.
             if not isinstance(strategy_result_dict[stockdata.symbol], StrategyResult):
                 response = strategy_execute(
-                    strategy_list=pre_strategy_list, stockdata=stockdata, save_strategy_result=save_strategy_result, weight_score_function=weight_score_function)
+                    weight_score_function=weight_score_function,
+                    strategy_list=pre_strategy_list, stockdata=stockdata, save_strategy_result=save_strategy_result, plot_package=plot_package)
                 if isinstance(response, ResponseSuccess):
                     strategy_result_dict[stockdata.symbol] = response.value
                 else:

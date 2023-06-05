@@ -64,10 +64,10 @@ def strategy_list():
 
 @pytest.fixture(scope='function')
 def dict_strategy_result():
-    return {'name': [(StrategyResultColumnType.BUY, 1),  # type and strategy weight
-                     (StrategyResultColumnType.BUY, 1),
-                     (StrategyResultColumnType.SELL, 1),
-                     (StrategyResultColumnType.KEEP, 1)],
+    return {'test strategy': [(StrategyResultColumnType.BUY, 1),  # type and strategy weight
+                              (StrategyResultColumnType.BUY, 1),
+                              (StrategyResultColumnType.SELL, 1),
+                              (StrategyResultColumnType.KEEP, 1)],
             'date': ['2022-10-30',
                      1388070000000,
                      '2022-02-09',
@@ -77,7 +77,7 @@ def dict_strategy_result():
 @pytest.fixture(scope='function')
 def strategy_result_data_frame(dict_strategy_result):
     df = pd.DataFrame(dict_strategy_result,
-                      columns=['name', 'date'])
+                      columns=['test strategy', 'date'])
     df.set_index('date', inplace=True)
     df.index = pd.to_datetime(df.index)
     df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')

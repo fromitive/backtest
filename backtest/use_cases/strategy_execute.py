@@ -35,7 +35,7 @@ def min_max_function(data: StockData, weight: int, name: str, avg_rolling: int =
     temp_df['result'] = temp_df.apply(lambda r: _min_max_function(r), axis=1)
 
     response[name] = temp_df['result']
-    return response
+    return response[['avg_vol', name]]
 
 
 def _dataframe_sma(df: pd.DataFrame, weight: int, rolling=100):
@@ -50,7 +50,7 @@ def _dataframe_sma(df: pd.DataFrame, weight: int, rolling=100):
         else:
             return (StrategyResultColumnType.BUY, weight)
     df['result'] = df.apply(lambda r: _sma_internal(r), axis=1)
-    return df
+    return df[['sma', 'smashift', 'result']]
 
 
 def _dataframe_sma_multi(df: pd.DataFrame, weight: int, rolling_list: List[int]):
@@ -66,7 +66,9 @@ def _dataframe_sma_multi(df: pd.DataFrame, weight: int, rolling_list: List[int])
         else:
             return (StrategyResultColumnType.KEEP, weight)
     df['result'] = df.apply(lambda r: _sma_internal(r), axis=1)
-    return df
+    column_list = ['sma_{}'.format(rolling) for rolling in rolling_list]
+    column_list.append('result')
+    return df[column_list]
 
 
 def sma_function(data: StockData, weight: int, name: str, rolling=100):
@@ -77,7 +79,7 @@ def sma_function(data: StockData, weight: int, name: str, rolling=100):
     """
     response = _dataframe_sma(data.data, weight, rolling)
     response = response.rename({'result': name}, axis=1)
-    return response[[name]]
+    return response
 
 
 def buy_rate_function(data: StockData, weight: int, name: str,
@@ -191,7 +193,7 @@ def sma_big_stock_function(data: StockData, weight: int, name: str, big_stock: S
         response = response.reindex(data.data.index, method='ffill')
 
     response = response.rename({'result': name}, axis=1)
-    return response[[name]]
+    return response
 
 
 def sma_multi_function(data: StockData, weight: int, name: str, rolling_list: List[int] = [15, 100]):
@@ -203,7 +205,7 @@ def sma_multi_function(data: StockData, weight: int, name: str, rolling_list: Li
     response = _dataframe_sma_multi(
         data.data, weight, rolling_list)
     response = response.rename({'result': name}, axis=1)
-    return response[[name]]
+    return response
 
 
 def sma_multi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, rolling_list: List[int] = [15, 100]):
@@ -220,7 +222,7 @@ def sma_multi_big_stock_function(data: StockData, weight: int, name: str, big_st
         response = response.reindex(data.data.index)
 
     response = response.rename({'result': name}, axis=1)
-    return response[[name]]
+    return response
 
 
 def _calculate_rsi(data, period):
@@ -231,8 +233,8 @@ def _calculate_rsi(data, period):
 
 def rsi_function(data: StockData, weight: int, name: str, period: int, sell_score: int, buy_score: int, keep_weight: int = -1):
     response = pd.DataFrame(
-        index=data.data.index, columns=[name])
-    data.data['rsi'] = _calculate_rsi(data, period)
+        index=data.data.index, columns=['rsi', name])
+    response['rsi'] = _calculate_rsi(data, period)
 
     def _rsi_function(r):
         if r <= buy_score:
@@ -244,9 +246,9 @@ def rsi_function(data: StockData, weight: int, name: str, period: int, sell_scor
                 return (StrategyResultColumnType.KEEP, weight)
             else:
                 return (StrategyResultColumnType.KEEP, keep_weight)
-    response[name] = data.data.apply(
+    response[name] = response.apply(
         lambda r: _rsi_function(r['rsi']), axis=1)
-    return response
+    return response[['rsi', name]]
 
 
 def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: StockData, period: int, sell_score: int, buy_score: int, keep_weight: int = -1):
@@ -273,7 +275,7 @@ def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: S
                 return (StrategyResultColumnType.KEEP, keep_weight)
     response[name] = data.data.apply(
         lambda r: _rsi_function(r['rsi']), axis=1)
-    return response
+    return response[['rsi', name]]
 
 
 def greed_fear_index_function(data: StockData, weight: int, name: str, greed_fear_index_data: pd.DataFrame, index_fear: int, index_greed: int):
@@ -321,6 +323,8 @@ def _sum_strategy(series: pd.Series, stockdata: StockData, weight_score_function
 
 
 def _inverse_strategy(row: pd.Series, name: str):
+    if not isinstance(row[name], tuple):
+        return (StrategyResultColumnType.KEEP, 0)
     col_type, weight = row[name]
     if col_type == StrategyResultColumnType.BUY:
         return (StrategyResultColumnType.SELL, weight)
@@ -331,6 +335,8 @@ def _inverse_strategy(row: pd.Series, name: str):
 
 
 def _sellonly_strategy(row: pd.Series, name: str):
+    if not isinstance(row[name], tuple):
+        return (StrategyResultColumnType.KEEP, 0)
     col_type, weight = row[name]
     if col_type == StrategyResultColumnType.BUY:
         return (StrategyResultColumnType.KEEP, 0)
@@ -339,7 +345,10 @@ def _sellonly_strategy(row: pd.Series, name: str):
 
 
 def _buyonly_strategy(row: pd.Series, name: str):
+    if not isinstance(row[name], tuple):
+        return (StrategyResultColumnType.KEEP, 0)
     col_type, weight = row[name]
+
     if col_type == StrategyResultColumnType.SELL:
         return (StrategyResultColumnType.KEEP, 0)
     else:
@@ -351,7 +360,7 @@ def _basic_weight_score_function(first: int, second: int, third: int):
         (1 + second + third)
 
 
-def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function):
+def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function, plot_package: dict = None):
     strategy_total_result = pd.DataFrame(
         index=stockdata.data.index)
     strategy_bucket = set()
@@ -385,13 +394,17 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_s
             elif strategy.flag == StrategyExecuteFlagType.BUYONLY:
                 strategy_result[strategy.name] = strategy_result.apply(
                     lambda row: _buyonly_strategy(row, strategy.name), axis=1)
-
+            if plot_package:
+                if stockdata.symbol not in plot_package.keys():
+                    plot_package[stockdata.symbol] = []
+                plot_package[stockdata.symobl].append(
+                    {strategy.name: strategy_result})
             if len(stockdata) >= len(strategy_result):
                 strategy_total_result = strategy_total_result.join(
-                    strategy_result, how='left', rsuffix='{}_'.format(strategy.name))
+                    strategy_result[[strategy.name]], how='left', rsuffix='{}_'.format(strategy.name))
             else:
                 strategy_total_result = strategy_total_result.join(
-                    strategy_result, how='inner', rsuffix='{}_'.format(strategy.name))
+                    strategy_result[[strategy.name]], how='inner', rsuffix='{}_'.format(strategy.name))
     # delete temporary data
     del copied_data
     # fill na with
