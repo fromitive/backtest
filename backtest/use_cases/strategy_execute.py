@@ -7,6 +7,7 @@ from backtest.domains.strategy_result import (StrategyResult,
 from backtest.module_compet.pandas import pd
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
 from ta.momentum import RSIIndicator
+import copy
 import numpy as np
 
 
@@ -356,6 +357,9 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_s
     strategy_bucket = set()
     strategy_name_list = set([strategy.name for strategy in strategy_list])
     strategy_dict = {bucket_item: 1 for bucket_item in strategy_name_list}
+
+    # create copied data for temporary used (calculate strategy result)
+    copied_data = copy.deepcopy(stockdata)
     for strategy in strategy_list:
         if strategy.weight == 0:  # skip if strategy weight is zero
             continue
@@ -365,8 +369,9 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_s
                 strategy.name, strategy_dict[strategy.name])
         else:
             strategy_bucket.add(strategy.name)
+
         response = _inner_strategy_execute(
-            strategy=strategy, data=stockdata)
+            strategy=strategy, data=copied_data)
         if isinstance(response, ResponseFailure):
             return ResponseFailure(ResponseTypes.SYSTEM_ERROR, "strategy function error occured!")
         else:
@@ -387,6 +392,8 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_s
             else:
                 strategy_total_result = strategy_total_result.join(
                     strategy_result, how='inner', rsuffix='{}_'.format(strategy.name))
+    # delete temporary data
+    del copied_data
     # fill na with
     for column in strategy_total_result.columns:
         strategy_total_result[column] = strategy_total_result[column].fillna(
