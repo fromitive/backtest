@@ -82,7 +82,7 @@ def _inner_strategy_execute_result(dict_strategy_result):
     return ResponseSuccess(df)
 
 
-@mock.patch('backtest.use_cases.strategy_execute._inner_strategy_execute')
+@mock.patch('backtest.use_cases.strategy_execute')
 def test_backtest_execute_without_options(strategy_execute_result, strategy_list, stockdata_list, _inner_strategy_execute_result):
     strategy_execute_result.return_value = _inner_strategy_execute_result
     strategies = strategy_list
