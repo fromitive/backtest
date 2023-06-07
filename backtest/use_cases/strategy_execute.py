@@ -2,6 +2,7 @@ from typing import List
 
 from backtest.domains.stockdata import StockData
 from backtest.domains.strategy import Strategy, StrategyExecuteFlagType
+from backtest.domains.backtest_plot_package import BacktestPlotPackage
 from backtest.domains.strategy_result import (StrategyResult,
                                               StrategyResultColumnType)
 from backtest.module_compet.pandas import pd
@@ -360,7 +361,8 @@ def _basic_weight_score_function(first: int, second: int, third: int):
         (1 + second + third)
 
 
-def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_strategy_result: bool = False, weight_score_function=_basic_weight_score_function, plot_package: dict = None):
+def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_strategy_result: bool = False,
+                     weight_score_function=_basic_weight_score_function, plot_package: BacktestPlotPackage = None):
     strategy_total_result = pd.DataFrame(
         index=stockdata.data.index)
     strategy_bucket = set()
@@ -395,9 +397,9 @@ def strategy_execute(strategy_list: List[Strategy], stockdata: StockData, save_s
                 strategy_result[strategy.name] = strategy_result.apply(
                     lambda row: _buyonly_strategy(row, strategy.name), axis=1)
             if plot_package:
-                if stockdata.symbol not in plot_package.keys():
-                    plot_package[stockdata.symbol] = []
-                plot_package[stockdata.symobl].append(
+                if stockdata.symbol not in plot_package.package_data_bucket.keys():
+                    plot_package.package_data_bucket[stockdata.symbol] = []
+                plot_package.package_data_bucket[stockdata.symbol].append(
                     {strategy.name: strategy_result})
             if len(stockdata) >= len(strategy_result):
                 strategy_total_result = strategy_total_result.join(

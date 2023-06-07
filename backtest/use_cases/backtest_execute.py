@@ -3,6 +3,7 @@ import math
 import numpy as np
 
 from backtest.domains.backtest import Backtest
+from backtest.domains.backtest_plot_package import BacktestPlotPackage
 from backtest.domains.backtest_result import BacktestResult
 from backtest.domains.selector_result import SelectorResultColumnType
 from backtest.domains.strategy_result import (StrategyResult,
@@ -39,7 +40,9 @@ def _init_backtest_result(column_name_and_type: dict, base_index: pd.Index):
     return backtest_result_raw
 
 
-def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, invest_rate: float = 0.01, minimum_buy_count: float = 5.0, verbose: bool = False, save_strategy_result: bool = False, save_raw_csv_file: str = '', weight_score_function=_basic_weight_score_function, plot_package: dict = None):
+def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, invest_rate: float = 0.01,
+                     minimum_buy_count: float = 5.0, verbose: bool = False, save_strategy_result: bool = False,
+                     save_raw_csv_file: str = '', weight_score_function=_basic_weight_score_function, plot_package: BacktestPlotPackage = None):
     standardize_stock(stockdata_list=backtest.stockdata_list)
     base_index = backtest.stockdata_list[0].data.index
 
