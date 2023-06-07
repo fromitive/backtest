@@ -148,7 +148,7 @@ def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, 
             buy_df = stock_bucket_df.loc[stock_bucket_df['bucket'] > 0]
             buy_list = list(buy_df.index)
             buy_list.sort(
-                key=lambda profit_index: stockdata_dict[symbol].data.at[index, 'close'] - stockdata_dict[symbol].data.at[profit_index, 'close'])
+                key=lambda profit_index: stockdata_dict[symbol].data.at[profit_index, 'close'], reverse=True)
             for profit_index in buy_list:
                 bucket_cnt = stock_bucket_df.at[profit_index, 'bucket']
                 profit_money = stock_bucket_df.at[profit_index, 'invest_money'] * (stockdata_dict[symbol].data.at[index, 'close'] /
@@ -159,6 +159,7 @@ def backtest_execute(backtest: Backtest, init_invest_money: float = 10000000.0, 
             strategy_result_of_day, weight_score = strategy_result_dict[symbol].value[index]
             # sell strategy execute
             if strategy_result_of_day == StrategyResultColumnType.SELL:
+                total_potential_earn -= symbol_earn
                 # cacluate sell_rate
                 total_stock_length = buy_df['bucket'].sum()
                 sell_cnt = math.ceil(
