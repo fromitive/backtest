@@ -60,7 +60,7 @@ def stockdata_list(dict_stock_data_list):
 
 @pytest.fixture(scope='function')
 def dict_strategy_result():
-    return {'name': [(StrategyResultColumnType.BUY, 1),  # type and strategy weight
+    return {'name': [(StrategyResultColumnType.BUY, 1),  # final strategy column and weight score
                      (StrategyResultColumnType.BUY, 1),
                      (StrategyResultColumnType.SELL, 1),
                      (StrategyResultColumnType.KEEP, 1),
