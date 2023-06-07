@@ -280,9 +280,15 @@ def rsi_big_stock_function(data: StockData, weight: int, name: str, big_stock: S
 
 
 def greed_fear_index_function(data: StockData, weight: int, name: str, greed_fear_index_data: pd.DataFrame, index_fear: int, index_greed: int):
+    temp_data = greed_fear_index_data.copy()
+    if data.unit == 'M':
+        temp_data.index = pd.to_datetime(temp_data.index)
+        temp_data = temp_data.resample('T').fillna(method='bfill')
+        temp_data = temp_data.reindex(data.data.index, method='ffill')
+
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
-    raw_result = data.data.join(greed_fear_index_data, how='inner')
+    raw_result = data.data.join(temp_data, how='inner')
 
     def _greed_fear_index(r):
         if (r['value']) <= index_fear:  # extreme greed
