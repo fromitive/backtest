@@ -252,7 +252,7 @@ def rsi_function(data: StockData, weight: int, name: str, period: int, sell_scor
     return response[['rsi', name]]
 
 
-def rsi_sma_diff_function(data: StockData, weight: int, name: str, rsi_period: int, sma_period: int, keep_weight: int = -1):
+def rsi_sma_diff_function(data: StockData, weight: int, name: str, rsi_period: int, sma_period: int, buy_rsi: float = 20.0, sell_rsi: float = 70.0, keep_weight: int = -1):
     response = pd.DataFrame(
         index=data.data.index, columns=['rsi', 'sma', name])
     response['rsi'] = _calculate_rsi(data, rsi_period)
@@ -267,9 +267,9 @@ def rsi_sma_diff_function(data: StockData, weight: int, name: str, rsi_period: i
     # sma_rsi_diff_only_plus - smi_rsi_diff_diff_rsi
 
     def _rsi_sma_diff_function(r):
-        if r['sma_diff_raw_data'] > 0:
+        if r['sma_diff_raw_data'] > 0 and r['rsi'] <= buy_rsi:
             return (StrategyResultColumnType.BUY, weight)
-        elif (r['rsi'] - (r['sma_diff_raw_data'] * (-1.0))) < 0.01:
+        elif (r['rsi'] - (r['sma_diff_raw_data'] * (-1.0))) < 0.01 and r['rsi'] >= sell_rsi:
             return (StrategyResultColumnType.SELL, weight)
         else:
             return (StrategyResultColumnType.KEEP, 0)
