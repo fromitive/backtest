@@ -181,7 +181,7 @@ def buy_thread(buy_rate: float = 0.5):
                     second = current_time.second
                     today_target = bithumb.nlargest(GLOBAL_TRADE_STOCK_COUNT, 'acc_trade_value_24H')
                     symbols = list(today_target.index)
-                    if minute >= 29 or minute >= 59:
+                    if (minute >= 29 and minute < 30) or minute >= 59:
                         if second >= 50:
                             for symbol in symbols:
                                 if is_tradeable(symbol, verbose=GLOBAL_VERBOSE):
