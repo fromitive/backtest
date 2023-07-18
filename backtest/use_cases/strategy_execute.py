@@ -10,6 +10,7 @@ from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
 from ta.momentum import RSIIndicator
 import copy
 import numpy as np
+import talib
 
 
 def basic_function(data: StockData, weight: int, name: str):
@@ -20,6 +21,84 @@ def basic_function(data: StockData, weight: int, name: str):
     return response
 
 
+def stocastic_rsi_ema_mix_function(data: StockData, weight: int, name: str, timeperiod: int = 200, rsi_period: int = 14, fastk_period=3, fastd_period=3, fastd_matype=0,
+                                buy_rate: float = 25.0, sell_profit: float = 0.02, sell_lose: float = -0.015, heikin_ashi: dict = {}, compare_movement: int = 3):
+    heikin_ashi_df = None
+
+    if data.symbol in heikin_ashi.keys():
+        heikin_ashi_stockdata = heikin_ashi[data.symbol]
+        heikin_ashi_df = heikin_ashi_stockdata.data
+    
+    
+    for i in range(compare_movement):
+        heikin_ashi_df['Movement_{}'.format(i)] = heikin_ashi_df['Movement'].shift(i)
+    
+    
+    def _is_tradeable(r: pd.Series):
+        for i in range(compare_movement):
+            if r['Movement_{}'.format(i)] == 'Down':
+                return False
+        return True
+            
+    heikin_ashi_df['tradeable'] = heikin_ashi_df.apply(lambda r: _is_tradeable(r),axis=1)
+    # resample heikin_ashi_df
+    if heikin_ashi_stockdata.unit == 'D' and data.unit == 'M':
+        heikin_ashi_df.index = pd.to_datetime(heikin_ashi_df.index)
+        heikin_ashi_df = heikin_ashi_df.resample('T').fillna(method='bfill')
+        heikin_ashi_df = heikin_ashi_df.reindex(data.data.index, method='ffill')
+    
+    df = data.data
+    df['tradeable'] = heikin_ashi_df['tradeable']
+    
+    df['ema'] = talib.EMA(df['close'], timeperiod=timeperiod)
+    df['RSI'] = talib.RSI(df['close'], timeperiod=rsi_period)
+    df['fastk'], df['fastd'] = talib.STOCH(df['RSI'], df['RSI'], df['RSI'], fastk_period=14,slowk_period=3,slowk_matype=0,slowd_period=3, slowd_matype=0)
+    df['before_fastk'] = df['fastk'].shift(1)
+    df['before_fastd'] = df['fastd'].shift(1)
+    
+    def _buy_signal(r: pd.Series):
+        if r.tradeable:
+            if r.close > r.ema:  # buy condition 1
+                # buy condition 2
+                if r.fastk < buy_rate and r.fastd < buy_rate:
+                    # buy_condition 3
+                    if r.before_fastk < r.fastk and r.before_fastd < r.fastd:
+                        if r.fastk > r.fastd:
+                            return (StrategyResultColumnType.BUY, weight)
+        return (StrategyResultColumnType.KEEP, 0)
+    
+    df['result'] = df.apply(lambda r: _buy_signal(r), axis=1)
+    
+    # add sell strategy
+    buy_buffer = {'count': -1, 'idx': ""}
+    
+    for count, idx in enumerate(df.index):
+        strategy, _ = df.at[idx, 'result']
+        # buy signal meet
+        if strategy == StrategyResultColumnType.BUY:
+            if buy_buffer['count'] < 0 and buy_buffer['idx'] == "":
+                buy_buffer['count'] = count
+                buy_buffer['idx'] = idx
+            else:  # buy_buffer already exist
+                if abs(count - buy_buffer['count']) < 7:
+                    df.at[idx, 'result'] = (StrategyResultColumnType.KEEP, 0)
+                else:
+                    df.at[idx, 'result'] = (StrategyResultColumnType.SELL, weight)
+                    if idx != df.index[-1]:
+                        df['result'].iat[count + 1] = (StrategyResultColumnType.BUY, weight)
+                    buy_buffer = {'count': -1, 'idx': ""}  # init buy_buffer
+
+        if buy_buffer['count'] >= 0 and buy_buffer['idx'] != "":
+            buy_buffer_idx = buy_buffer['idx']
+            profit_rate = (df.at[idx, 'close'] - df.at[buy_buffer_idx, 'close']) / df.at[buy_buffer_idx, 'close'] # calc profit_rate
+            if profit_rate >= sell_profit or profit_rate <= sell_lose: 
+                df.at[idx, 'result'] = (StrategyResultColumnType.SELL, weight)
+                buy_buffer = {'count': -1, 'idx': ""}  # init buy_buffer
+        
+    df[name] = df['result']
+    return df[[name, 'ema', 'fastk', 'fastd']]
+        
+        
 def min_max_function(data: StockData, weight: int, name: str, avg_rolling: int = 7, avg_vol_rate: float = 2.0, high_low_diff_rate: float = 0.10):
     response = pd.DataFrame(
         index=data.data.index, columns=[name])
