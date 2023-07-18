@@ -123,7 +123,6 @@ def execute_trade(symbol: str, types: str, **kwargs) -> bool:
     order_id = ''
     while try_count < GLOBAL_MAX_TRY_COUNT:
         if is_trade is False:
-            print('try trade')
             result = None
             if types == 'BUY':
                 buy_rate = kwargs['buy_rate'] 
@@ -131,11 +130,12 @@ def execute_trade(symbol: str, types: str, **kwargs) -> bool:
                 trade_fee = float(GLOBAL_BITHUMB_PRIV.account(order_currency=symbol, payment_currency='KRW')['data']['trade_fee'])
                 coin_price = float(GLOBAL_BITHUMB_PUB.orderbook(order_currency=symbol)['data']['bids'][0]['price'])
                 buy_unit = my_krw / coin_price * (1 - trade_fee)
-                result = GLOBAL_BITHUMB_PRIV.place(order_currency=symbol, units="{:.4f}".format(buy_unit), payment_currency="KRW", type='bid')
+                result = GLOBAL_BITHUMB_PRIV.place(order_currency=symbol, units="{:.4f}".format(buy_unit), payment_currency="KRW", type='bid', price=coin_price)
+                print(result)
             elif types == 'SELL':
                 sell_unit = kwargs['sell_unit']
                 coin_price = float(GLOBAL_BITHUMB_PUB.orderbook(order_currency=symbol)['data']['bids'][0]['price'])
-                result = GLOBAL_BITHUMB_PRIV.place(order_currency=symbol, units=sell_unit, payment_currency="KRW", type='ask')
+                result = GLOBAL_BITHUMB_PRIV.place(order_currency=symbol, units=sell_unit, payment_currency="KRW", type='ask', price=coin_price)
             status_code = result['status']
             if status_code == '0000':
                 order_id = result['order_id']
@@ -143,6 +143,7 @@ def execute_trade(symbol: str, types: str, **kwargs) -> bool:
         if order_id:
             time.sleep(2)
             order_detail = GLOBAL_BITHUMB_PRIV.order_detail(order_id=order_id, order_currency=symbol, payment_currency="KRW")
+            print(order_detail)
             status_code = order_detail['status']
             if status_code == '0000':
                 order_status = order_detail['data']['order_status']
@@ -181,7 +182,7 @@ def buy_thread(buy_rate: float = 0.5):
                     second = current_time.second
                     today_target = bithumb.nlargest(GLOBAL_TRADE_STOCK_COUNT, 'acc_trade_value_24H')
                     symbols = list(today_target.index)
-                    if (minute >= 29 and minute < 30) or minute >= 59:
+                    if minute == 29 or minute == 59:
                         if second >= 50:
                             for symbol in symbols:
                                 if is_tradeable(symbol, verbose=GLOBAL_VERBOSE):
@@ -236,7 +237,7 @@ GLOBAL_BUY_DICT = {'flag': False, 'symbol': '', 'order_id': ''}
 GLOBAL_VERBOSE = True
 GLOBAL_TRADE_STOCK_COUNT = 10
 GLOBAL_MAX_TRY_COUNT = 5
-buy_rate = 0.5
+buy_rate = 0.1
 sell_profit = 0.02
 sell_loss = -0.01
 lock = threading.Lock()  # Create a lock object
