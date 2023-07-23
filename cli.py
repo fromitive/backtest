@@ -92,16 +92,7 @@ def execute_trade(symbol: str, types: str, **kwargs) -> bool:
     try_count = 0
     is_trade = False
     order_id = ''
-    cancel_buffer = []
     while try_count < GLOBAL_MAX_TRY_COUNT:
-        while cancel_buffer:  # check cancel buffer remained
-            cancel_order_id = cancel_buffer.pop()
-            cancel_order_status = GLOBAL_TRADE_OBJECT.get_order_status(order_id=cancel_order_id)
-            if cancel_order_status:
-                order_id = cancel_order_id
-                is_trade = True
-                break
-            
         if is_trade is False:
             if types == 'BUY':
                 buy_rate = kwargs['buy_rate'] 
@@ -109,29 +100,31 @@ def execute_trade(symbol: str, types: str, **kwargs) -> bool:
                 trade_fee = float(GLOBAL_TRADE_OBJECT.get_trade_fee(symbol=symbol))
                 coin_price = float(GLOBAL_TRADE_OBJECT.get_coin_price(symbol=symbol))
                 buy_unit = my_krw / coin_price * (1 - trade_fee)
-                order_id = GLOBAL_TRADE_OBJECT.trade(symbol=symbol, units="{:.4f}".format(buy_unit), type='BUY', price=coin_price, payment_currency="KRW")
+                order_result = GLOBAL_TRADE_OBJECT.trade(symbol=symbol, units="{:.4f}".format(buy_unit), type='BUY', price=coin_price, payment_currency="KRW")
             elif types == 'SELL':
                 sell_unit = kwargs['sell_unit']
                 coin_price = float(GLOBAL_TRADE_OBJECT.get_coin_price(symbol=symbol))
-                order_id = GLOBAL_TRADE_OBJECT.trade(symbol=symbol, units=sell_unit, type='SELL', price=coin_price, payment_currency="KRW")
-            if order_id and '-' in order_id:
+                order_result = GLOBAL_TRADE_OBJECT.trade(symbol=symbol, units=sell_unit, type='SELL', price=coin_price, payment_currency="KRW")
+            if order_result and '-' in order_result:
                 is_trade = True
+                order_id = order_result
             else:
                 print('[ERROR] {}'.format(order_id))
                 
-        if order_id:
+        if order_id and is_trade:
             time.sleep(10)
-            print(order_id)
             order_status = GLOBAL_TRADE_OBJECT.get_order_status(order_id=order_id)
             order_type = GLOBAL_TRADE_OBJECT.get_order_type(order_id=order_id)
+            
             # Order Cancel <-- todo!
             if GLOBAL_VERBOSE:
                 print("[INFO] [{types} - {symbol}] Order Status : {order_status}, try_count : {try_count}".format(types=types, symbol=symbol, order_status=order_status, try_count=try_count))
+                
             if not order_status:
                 GLOBAL_TRADE_OBJECT.order_cancel(order_id=order_id, symbol=symbol, order_type=order_type)
-                cancel_buffer.append(order_id)
-                order_id = ''
-                is_trade = False
+                if GLOBAL_TRADE_OBJECT.get_cancel_status(order_id):
+                    order_id = ''
+                    is_trade = False
             else:
                 if types == 'BUY':
                     GLOBAL_BUY_DICT['symbol'] = symbol
