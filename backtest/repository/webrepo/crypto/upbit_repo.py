@@ -1,4 +1,5 @@
 import time
+import random
 from datetime import datetime, timedelta
 
 import requests
@@ -68,7 +69,10 @@ class UpbitRepo:
 
         while True:
             response = requests.get(request_url, headers=self.API_HEADERS)
+            # response.headers['remaining-req']
             if response.status_code == 200:
+                if int(response.headers['remaining-req'].split('sec=')[1]) < 2:
+                    time.sleep(random.random())
                 result_list = response.json()  # list
                 if result_list == []:
                     break
@@ -115,7 +119,6 @@ class UpbitRepo:
                 raise Exception(
                     'date_convert error data_last_date: ', data_last_date)
             temp_list += result_list
-            time.sleep(0.3)
         temp_df = pd.DataFrame(temp_list, columns=[
             'candle_date_time_kst', 'opening_price', 'high_price', 'low_price', 'trade_price', 'candle_acc_trade_volume'])
 
