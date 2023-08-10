@@ -8,6 +8,7 @@ from backtest.domains.strategy_result import (StrategyResult,
 from backtest.module_compet.pandas import pd
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
 from ta.momentum import RSIIndicator
+from backtest.util.custom_indicator import trendilo,twin_range_filter
 import copy
 import numpy as np
 import talib
@@ -19,6 +20,289 @@ def basic_function(data: StockData, weight: int, name: str):
     response[name] = [(
         StrategyResultColumnType.KEEP, weight)] * len(data)
     return response
+
+def _calc_max_min_df(df: pd.DataFrame):
+    df['min_price'] = df['close'].iloc[0]
+    df['max_price'] = df['close'].iloc[1]
+    min_price = df['close'].iloc[0]
+    max_price = df['close'].iloc[1]
+    for pos in range(2, len(df)):
+        current_price = df['close'].iat[pos]
+        if min(min_price, current_price) != min_price:
+            min_price = current_price
+            max_price = current_price
+        else:
+            max_price = max(max_price, current_price)
+        df['min_price'].iat[pos] = min_price
+        df['max_price'].iat[pos] = max_price
+    return df
+
+def ema_local_min_max_trandline_function(data: StockData, weight: int, name: str):
+    df = data.data
+    df['ema_200'] = talib.EMA(df['close'], timeperiod=200)
+    period = 100
+    local_minima_indices = argrelextrema(df['ema_200'].values, np.less, order=period)
+    local_maxima_indices = argrelextrema(df['ema_200'].values, np.greater, order=period)
+    df['local_minima'] = False
+    df['local_maxima'] = False
+    df.loc[df.index[local_minima_indices], 'local_minima'] = True
+    df.loc[df.index[local_maxima_indices], 'local_maxima'] = True
+    
+    df['local_max_value'] = None
+    df['local_min_value'] = None
+    df.loc[df.index[local_minima_indices], 'local_min_value'] = df.loc[df.index[local_minima_indices], 'ema_200']
+    df.loc[df.index[local_maxima_indices], 'local_max_value'] = df.loc[df.index[local_maxima_indices], 'ema_200']
+    df['local_max_value'] = df['local_max_value'].ffill()
+    df['local_min_value'] = df['local_min_value'].ffill()
+        
+    signal1 = False
+    ema_200 = df[df['ema_200'] != np.nan]['ema_200'].values[-1]
+    rate_threshold = 0.05
+    df['buy_signal'] = False
+    for idx in range(len(df)):
+        if df['local_maxima'].iat[idx]:
+            signal1 = True
+            ema_200 = df['ema_200'].iat[idx]
+        if signal1:
+            if df['local_minima'].iat[idx]:
+                local_minima_ema = df['ema_200'].iat[idx]
+                rate = (ema_200 - local_minima_ema) / ema_200
+                if rate > rate_threshold:
+                    df['buy_signal'].iat[idx] = True
+                    signal1 = False
+                
+    df['buy_signal_shift_1'] = df['buy_signal'].shift(1)
+    
+    def _build_result(r:pd.Series):
+        if r['buy_signal_shift_1'] is True:
+            return (StrategyResultColumnType.BUY, weight)
+        else:
+            return (StrategyResultColumnType.KEEP, 0)
+        
+    df[name] = df.apply(lambda r: _build_result(r), axis=1)
+    
+    buy_buffer = {'count': -1, 'idx': ""}
+    # debug 
+    if len(df[df['buy_signal_shift_1'] == True].index) > 0:
+        print('[DEBUG] {symbol} - last index {index}'.format(symbol=data.symbol, index=df[df['buy_signal_shift_1'] == True].index[-1]))
+
+    
+    df['min_price'] = df['low'].rolling(window=20).min()
+    df['sell_loss'] = (df['min_price'] - df['close']) / df['close']
+    df['sell_profit'] = df['sell_loss'].abs() * 2
+    for count, idx in enumerate(df.index):
+        strategy, _ = df.at[idx, name]
+        # buy signal meet
+        if strategy == StrategyResultColumnType.BUY:
+            if buy_buffer['count'] < 0 and buy_buffer['idx'] == "":
+                buy_buffer['count'] = count
+                buy_buffer['idx'] = idx
+
+        if buy_buffer['count'] >= 0 and buy_buffer['idx'] != "":
+            buy_buffer_idx = buy_buffer['idx']
+            sell_loss = df.at[buy_buffer_idx, 'sell_loss']
+            sell_profit = df.at[buy_buffer_idx, 'sell_profit']
+            profit_rate = (df.at[idx, 'high'] - df.at[buy_buffer_idx, 'close']) / df.at[buy_buffer_idx, 'close'] # calc profit_rate
+            if profit_rate >= sell_profit or profit_rate <= sell_loss: 
+                df.at[idx, name] = (StrategyResultColumnType.SELL, weight)
+                buy_buffer = {'count': -1, 'idx': ""}  # init buy_buffer
+    
+    return df[[name, 'sell_loss', 'sell_profit']]
+    
+def trendilo_mix_function(data: StockData, weight: int, name: str, big_stock: StockData):
+    df = data.data
+    big_df = big_stock.data
+    big_df[['avpch', 'rms']] = trendilo(big_df)
+    big_df['trading_time'] = big_df.apply(lambda r:r['avpch'] > r['rms'], axis=1)
+    
+    if big_stock.unit == 'D' and data.unit == 'M':
+        big_df.index = pd.to_datetime(big_df.index)
+        big_df = big_df.resample('T').fillna(method='ffill')
+        big_df = big_df.reindex(data.data.index).fillna(method='ffill')
+    df['trading_time'] = big_df['trading_time'].shift(1)
+    df[['avpch', 'rms']] = trendilo(df)
+    df[['long', 'short']] = twin_range_filter(df)
+    
+    df['trendilo_signal'] = False
+    trendilo_signal1 = False
+    for idx in range(1,len(df)):
+        # signal1: positive rms not occur
+        positive_rms_signal = df['rms'].iat[idx]
+        negative_rms_signal = - df['rms'].iat[idx]
+        current_avpch = df['avpch'].iat[idx]
+        if positive_rms_signal < current_avpch:
+            trendilo_signal1 = False
+        elif negative_rms_signal > current_avpch:
+            trendilo_signal1 = True
+        if trendilo_signal1:  # trendilo_signal1 is True
+            if current_avpch > 0.0:
+                df['trendilo_signal'].iat[idx] = True
+    
+    # Compute Volume Oscillator
+    short_term = 5
+    long_term = 20
+    short_mavg = df['volume'].rolling(window=short_term).mean()
+    long_mavg = df['volume'].rolling(window=long_term).mean()
+    def custom_function(x):
+        print(type(x))
+    custom_rolling = df['volume'].rolling(window=10).apply(lambda x : custom_function(x))
+    # Compute Volume Oscillator
+    df['vol_osc'] = (short_mavg - long_mavg) / long_mavg * 100
+    
+    df['vol_osc_trading_time'] = df.apply(lambda r: r['vol_osc'] > 0.0, axis=1)
+
+    df['ema_20'] = talib.EMA(df['close'], timeperiod=20)
+    df['ema_200'] = talib.EMA(df['close'], timeperiod=200)
+    df['ema_200_trading_time'] = df.apply(lambda r: r['ema_20'] > r['ema_200'], axis=1)
+    
+    df['buy_signal'] = df.apply(lambda r: r['ema_200_trading_time'] and r['vol_osc_trading_time'] and r['long'] and r['trendilo_signal'], axis=1)
+    
+    pass
+    
+
+def pivot_strategy(data: StockData, weight: int, name: str, big_stock: StockData, pivot_days: int = 7, local_minima_gap: int = 3):
+    df = data.data
+    big_df = big_stock.data
+    
+    ## caclulate pivot point
+    big_df['n_days_high'] = big_df['high'].rolling(pivot_days).max()
+    big_df['n_days_low'] = big_df['low'].rolling(pivot_days).min()
+    big_df['n_days_close'] = big_df['close'].rolling(pivot_days).mean()
+    
+    big_df['pivot_point'] = big_df.apply(lambda r: (r['n_days_high'] + r['n_days_low'] + r['n_days_close']) / 3, axis=1)
+    big_df['support1'] = big_df.apply(lambda r: r['pivot_point'] * 2 - r['n_days_high'], axis=1)
+    big_df['resistance1'] = big_df.apply(lambda r: r['pivot_point'] * 2 - r['n_days_low'], axis=1)
+    big_df['support2'] = big_df.apply(lambda r: r['pivot_point'] - (r['resistance1'] - r['support1']), axis=1)
+    big_df['resistance2'] = big_df.apply(lambda r: r['pivot_point'] - (r['support1'] - r['resistance1']), axis=1)
+    
+    big_df['big_ema_200'] = talib.EMA(big_df['close'], timeperiod=200)
+    big_df['big_ema_200_shift_1'] = big_df['big_ema_200'].shift(1)
+    big_df['close_shift_1'] = big_df['close'].shift(1)
+    
+    def _calc_trading(r:pd.Series):
+        if r['close_shift_1'] > r['big_ema_200_shift_1']:
+            return True
+        return False
+    
+    big_df['trading_time'] = big_df.apply(lambda r:_calc_trading(r), axis=1)
+    
+    
+    ## sync 30minutes, daily
+    if big_stock.unit == 'D' and data.unit == 'M':
+        big_df.index = pd.to_datetime(big_df.index)
+        big_df = big_df.resample('T').fillna(method='ffill')
+        big_df = big_df.reindex(data.data.index).fillna(method='ffill')
+    
+    df['trading_time'] = big_df['trading_time']
+    df['pivot_point'] = big_df['pivot_point']
+    df['support1'] = big_df['support1']
+    df['support2'] = big_df['support2']
+    df['resistance1'] = big_df['resistance1']
+    df['resistance2'] = big_df['resistance2']
+    
+    ## calculate area
+    def _calc_area(r: pd.Series, column_name: str) -> int:
+        if r[column_name] < r['resistance2'] and r[column_name] >= r['resistance1']:
+            return 4
+        elif r[column_name] < r['resistance1'] and r[column_name] >= r['pivot_point']:
+            return 3
+        elif r[column_name] < r['pivot_point'] and r[column_name] >= r['support1']:
+            return 2
+        elif r[column_name] < r['support1'] and r[column_name] >= r['support2']:
+            return 1
+        else:
+            return 0
+    df['close_area'] = df.apply(lambda r: _calc_area(r, 'close'), axis=1).astype(int)
+    df['low_area'] = df.apply(lambda r: _calc_area(r, 'low'), axis=1).astype(int)
+    df['high_area'] = df.apply(lambda r: _calc_area(r, 'high'), axis=1).astype(int)
+    ## clacluate area movement
+    def _calc_area_movement(r:pd.Series) -> str:
+        if  r['close_area'] - r['low_area'] > 0.0:
+            return 'UP'
+        elif r['close_area'] - r['high_area'] < 0.0:
+            return 'DOWN'
+        else:
+            return 'NOT_MOVE'
+        
+    df['area_movement'] = df.apply(lambda r: _calc_area_movement(r), axis=1)
+    
+    
+    ## cacluate local minima data
+    df['low_min'] = df['low'].rolling(local_minima_gap).min()
+    df['close_min'] = df['close'].rolling(local_minima_gap).min()
+    
+    df['is_low_min'] = df.apply(lambda r: r['low_min'] == r['low'],axis=1)
+    df['is_close_min'] = df.apply(lambda r: r['close_min'] == r['close_min'],axis=1)
+    df['totally_local_minima'] = df.apply(lambda r: r['is_low_min'] and r['is_close_min'],axis=1)
+    df['previous_local_minima'] = df['totally_local_minima'].shift(1)
+    df['sell_loss'] = -0.015
+    def _calc_take_profit(r: pd.Series):
+        if r['close_area'] >= 4.0:
+            return (r['resistance2'] - r['close']) / r['close']
+        elif r['close_area'] >= 3.0:
+            return (r['resistance1'] - r['close']) / r['close']
+        elif r['close_area'] >= 2.0:
+            return (r['pivot_point'] - r['close']) / r['close']
+        else:
+            return (r['support1'] - r['close']) / r['close']
+    df['take_profit'] = df.apply(lambda r: min(0.15, _calc_take_profit(r)),axis=1)
+    # calc buy_sell signal
+    signal1 = (False, df.index[0])  # find 'UP' signal and there price
+    df['buy_signal'] = False
+    
+    for idx in range(1, len(df)):
+        if df['pivot_point'].iat[idx] != df['pivot_point'].iat[idx - 1]:
+            signal1 = (False, df.index[idx])
+        else:
+            if df['area_movement'].iat[idx] == 'DOWN':
+                signal1 = (False, df.index[idx])
+            elif df['area_movement'].iat[idx] == 'UP':
+                signal1 = (True, df.index[idx])
+            
+            if signal1[0]:
+                if df.index[idx] != signal1[1] and df['previous_local_minima'].iat[idx] and df['close'].iat[idx] > df['close'].iat[idx - 1]:
+                    if df['area_movement'].iat[idx] == 'NOT_MOVE' or df['area_movement'].iat[idx] == 'UP':
+                        df['buy_signal'].iat[idx] = True
+                        sell_loss_rate = (df.at[signal1[1],'low'] - df['close'].iat[idx]) / df['close'].iat[idx]
+                        df['sell_loss'].iat[idx] = sell_loss_rate
+
+    df['ema_200'] = talib.EMA(df['close'], timeperiod=200)
+    df['ema_20'] = talib.EMA(df['close'], timeperiod=20)
+    df['ema_signal'] = df.apply(lambda r: r['ema_200'] < r['close'] and r['ema_200'] < r['ema_20'], axis=1)
+    
+    def _build_result(r:pd.Series):
+        if r['buy_signal'] and r['ema_signal'] and r['trading_time']:
+            return (StrategyResultColumnType.BUY, weight)
+        else:
+            return (StrategyResultColumnType.KEEP, 0)
+        
+    df[name] = df.apply(lambda r: _build_result(r), axis=1)
+    
+    buy_buffer = {'count': -1, 'idx': ""}
+    
+    for count, idx in enumerate(df.index):
+        strategy, _ = df.at[idx, name]
+        # buy signal meet
+        if strategy == StrategyResultColumnType.BUY:
+            if buy_buffer['count'] < 0 and buy_buffer['idx'] == "":
+                buy_buffer['count'] = count
+                buy_buffer['idx'] = idx
+
+        if buy_buffer['count'] >= 0 and buy_buffer['idx'] != "":
+            buy_buffer_idx = buy_buffer['idx']
+            sell_profit = df.at[buy_buffer_idx, 'take_profit']
+            sell_loss = df.at[buy_buffer_idx, 'sell_loss']
+            profit_rate = (df.at[idx, 'high'] - df.at[buy_buffer_idx, 'close']) / df.at[buy_buffer_idx, 'close'] # calc profit_rate
+            if profit_rate >= sell_profit or profit_rate <= sell_loss: 
+                df.at[idx, name] = (StrategyResultColumnType.SELL, weight)
+                buy_buffer = {'count': -1, 'idx': ""}  # init buy_buffer
+    
+    return df[[name, 'take_profit', 'sell_loss']]
+
+def close_fibonacci(data: StockData, weight: int, name: str, big_stock: StockData):
+    df = data.data
+    _calc_max_min_df(df)
+
 
 def ema_fibonacci(data: StockData, weight: int, name: str, big_stock: StockData, sell_profit: float = 1.0):
     df = data.data
@@ -36,8 +320,8 @@ def ema_fibonacci(data: StockData, weight: int, name: str, big_stock: StockData,
     
     if big_stock.unit == 'D' and data.unit == 'M':
         big_df.index = pd.to_datetime(big_df.index)
-        big_df = big_df.resample('T').fillna(method='bfill')
-        big_df = big_df.reindex(data.data.index)
+        big_df = big_df.resample('T').fillna(method='ffill')
+        big_df = big_df.reindex(data.data.index).fillna(method='ffill')
         
     df['trading_time'] = big_df['trading_time']
     
@@ -77,12 +361,19 @@ def ema_fibonacci(data: StockData, weight: int, name: str, big_stock: StockData,
     df['volume_signal'] = df.apply(lambda r: _calc_volume_ema(r), axis=1)
     
     def _calc_rsi_signal(r:pd.Series):
-        if r.fastk < 20.0 and r.fastd < 20.0:
+        if r.fastk_shift1 < 20.0 and r.fastd_shift1 < 20.0 and r.fastk >= 20.0:
             if r.fastk > r.fastd and r.fastk > r.fastk_shift1 and r.fastd > r.fastd_shift1:
                 return True
         return False
     
     df['rsi_signal'] = df.apply(lambda r: _calc_rsi_signal(r), axis=1)
+    
+    def _up_signal(r:pd.Series):
+        if r.open < r.close:
+            return True
+        return False
+    
+    df['up_signal'] = df.apply(lambda r : _up_signal(r), axis=1)
     
     def _calc_fib_rate(r:pd.Series):
         boundary_count = 5
@@ -105,7 +396,7 @@ def ema_fibonacci(data: StockData, weight: int, name: str, big_stock: StockData,
     df['fib_rate'] = df.apply(lambda r: _calc_fib_rate(r), axis=1)
     
     def _build_result(r:pd.Series):
-        if r['rsi_signal'] and r['fib_rate'] and r['trading_time'] and r['not_max']:
+        if r['rsi_signal'] and r['fib_rate'] and r['trading_time'] and r['not_max'] and r['up_signal']:
             return (StrategyResultColumnType.BUY, weight)
         return (StrategyResultColumnType.KEEP, 0)
     
@@ -129,13 +420,13 @@ def ema_fibonacci(data: StockData, weight: int, name: str, big_stock: StockData,
                 if df.at[buy_buffer_idx, 'ema_{}'.format(ema)] < df.at[buy_buffer_idx, 'low']:
                     sell_loss = (df.at[buy_buffer_idx, 'ema_{}'.format(ema)] - df.at[buy_buffer_idx, 'close']) / df.at[buy_buffer_idx, 'close']
                     break
-            sell_profit = min(abs(sell_loss) * 1.5, sell_profit)
+            sell_profit = min(abs(sell_loss) * 1.5, 0.02)
             profit_rate = (df.at[idx, 'high'] - df.at[buy_buffer_idx, 'close']) / df.at[buy_buffer_idx, 'close'] # calc profit_rate
             if profit_rate >= sell_profit or profit_rate <= sell_loss: 
                 df.at[idx, name] = (StrategyResultColumnType.SELL, weight)
                 buy_buffer = {'count': -1, 'idx': ""}  # init buy_buffer
 
-    return df[[name, 'ema_20', 'ema_50', 'ema_100', 'ema_200']]
+    return df[[name, 'ema_20', 'ema_50', 'ema_100', 'ema_200', 'low']]
 
 
 def stocastic_rsi_ema_mix_function(data: StockData, weight: int, name: str, timeperiod: int = 200, rsi_period: int = 14, fastk_period=3, fastd_period=3, fastd_matype=0,
