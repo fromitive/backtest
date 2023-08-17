@@ -1,5 +1,5 @@
 from backtest.use_cases.backtest_execute import backtest_execute
-from backtest.use_cases.strategy_execute import ema_local_min_max_trandline_function
+from backtest.use_cases.strategy_execute import ema_local_min_max_trandline_function, ema_swing_low_function
 from backtest.domains.strategy_result import StrategyResultColumnType
 from backtest.request.stockdata_from_repo import build_stock_data_from_repo_request
 from backtest.use_cases.stockdata_from_repo import stockdata_from_repo
@@ -8,12 +8,11 @@ from backtest.domains.backtest_plot_package import BacktestPlotPackage
 from backtest.domains.backtest import Backtest
 from backtest.domains.strategy import Strategy
 from datetime import datetime, timedelta
-from trade import UpbitTrade
+from trade import UpbitTrade, TradeStrategyPackage
 from typing import List
 
 import threading
 import time
-
 
 def build_stockdata(symbol: str, from_date: str, cache: bool = False):
     request = build_stock_data_from_repo_request(
@@ -23,30 +22,49 @@ def build_stockdata(symbol: str, from_date: str, cache: bool = False):
     return stockdata
 
 
-def is_tradeable(symbol: str, verbose: bool = False, extra_column: List[str] = []):
+def is_tradeable(symbol: str, verbose: bool = False, trade_strategy_list: List[TradeStrategyPackage] = []):
     from_date = datetime.now() - timedelta(days=28)
     from_date_str = from_date.strftime("%Y-%m-%d")
     stockdata = build_stockdata(symbol=symbol, from_date=from_date_str, cache=False)
-    function_name = 'ema_local_min_max_trandline_function'
-    strategy_function = ema_local_min_max_trandline_function
-    strategy = Strategy(name=function_name, function=strategy_function, weight=100)
-    backtest = Backtest(strategy_list=[strategy], stockdata_list=[stockdata])
+    strategy_list = []
+    for trade_strategy in trade_strategy_list:
+        function_name = trade_strategy.strategy_function_name
+        strategy_function = trade_strategy.strategy_function
+        strategy = Strategy(name=function_name, function=strategy_function, weight=100, options=trade_strategy.strategy_options)
+        strategy_list.append(strategy)
+    backtest = Backtest(strategy_list=strategy_list, stockdata_list=[stockdata])
     plot_package = BacktestPlotPackage()
     backtest_execute(
         backtest, verbose=False, plot_package=plot_package).value
-    strategy_result = plot_package.package_data_bucket[symbol][0][function_name][function_name]
     
-    extra_data = dict()
-    for column in extra_column:
-        extra_data[column] = float(plot_package.package_data_bucket[symbol][0][function_name][column].iloc[-1])
+    dummy_extra_data = dict()
+    dummy_extra_function = None
+    for trade_strategy, package_data in zip(trade_strategy_list, plot_package.package_data_bucket[symbol]):
+        function_name = trade_strategy.strategy_function_name
+        strategy_result = package_data[function_name][function_name]
+    
+        extra_data = dict()
+        for column in trade_strategy.extra_column:
+            extra_data[column] = float(package_data[function_name][column].iloc[-1])
+        dummy_extra_data = extra_data
+        dummy_extra_function = trade_strategy.extra_function
         
-    for index, values in zip(strategy_result.iloc[-2:].index.values, strategy_result.iloc[-2:].values):
-        if verbose:
-            print('[{time}] [{symbol}] --> {latest_result}'.format(time=index, symbol=symbol, latest_result=values[0]))
-        if values[0] == StrategyResultColumnType.BUY:
-            return True, extra_data
+        for index, values in zip(strategy_result.iloc[-2:].index.values, strategy_result.iloc[-2:].values):
+            if verbose:
+                print('[{time}] [{symbol}] --> (strategy_function : {function_name}) {latest_result}'.format(time=index, symbol=symbol, function_name=function_name, latest_result=values[0]))
+            if values[0] == StrategyResultColumnType.BUY:
+                return True, extra_data, trade_strategy.extra_function
     
-    return False, extra_data
+    return False, dummy_extra_data, dummy_extra_function
+
+
+def is_tradeable_check(symbol: str, verbose: bool = False, trade_strategy_list: List[TradeStrategyPackage] = [], delay: int = 600):
+    tradeable, extra_data, extra_function = is_tradeable(symbol, verbose=verbose, trade_strategy_list=trade_strategy_list)
+    if tradeable:
+        print('buy pending... recheck')
+        time.sleep(delay)
+        tradeable, extra_data, extra_function = is_tradeable(symbol, verbose=verbose, trade_strategy_list=trade_strategy_list)
+    return tradeable, extra_data, extra_function
 
 
 def execute_trade(symbol: str, types: str, **kwargs) -> bool:
@@ -122,11 +140,13 @@ def is_market_timing(minute_list: List[int], minute: int, second: int):
     return False
 
 
-def buy_thread(buy_rate: float = 0.5, extra_column: List[str] = [], extra_function=None):
+def buy_thread(buy_rate: float = 0.5, trade_strategy_list: List[TradeStrategyPackage] = []):
     global GLOBAL_VERBOSE
     global GLOBAL_TRADE_STOCK_COUNT
+    global GLOBAL_TRADE_STOCK_MINIMAL_RANK
     global GLOBAL_TRADE_OBJECT
     global GLOBAL_SET
+    global GLOBAL_MAX_BUY_COUNT
     
     print('BUY_THREAD START')
     while True:
@@ -137,14 +157,14 @@ def buy_thread(buy_rate: float = 0.5, extra_column: List[str] = [], extra_functi
             if is_market_timing([0, 30], minute, second):
                 if GLOBAL_VERBOSE:
                     print('[CURRENT-TIME] {}'.format(current_time))
-                symbols = GLOBAL_TRADE_OBJECT.get_top_symbol_list(GLOBAL_TRADE_STOCK_COUNT, 'acc_trade_price_24h') 
-                symbols = symbols[::-1]
+                symbols = GLOBAL_TRADE_OBJECT.get_top_symbol_list(GLOBAL_TRADE_STOCK_MINIMAL_RANK, 'acc_trade_price_24h') 
+                symbols = symbols[::-1][:GLOBAL_TRADE_STOCK_COUNT]
                 for symbol in symbols:
-                    tradeable, extra_data = is_tradeable(symbol, verbose=GLOBAL_VERBOSE, extra_column=extra_column)
+                    tradeable, extra_data, extra_function = is_tradeable_check(symbol=symbol, verbose=GLOBAL_VERBOSE, trade_strategy_list=trade_strategy_list, delay=600)
                     if tradeable:
                         if GLOBAL_VERBOSE:
                             print('BUY SYMBOL : {}'.format(symbol))
-                        if symbol not in GLOBAL_SET:
+                        if symbol not in GLOBAL_SET or len(GLOBAL_SET) < GLOBAL_MAX_BUY_COUNT:
                             lock.acquire()  # Acquire the lock
                             execute_trade(symbol, 'BUY', buy_rate=buy_rate, extra_data=extra_data, extra_function=extra_function)
                             lock.release()  # Release the lock
@@ -156,8 +176,9 @@ def buy_thread(buy_rate: float = 0.5, extra_column: List[str] = [], extra_functi
 def sell_thread(buy_dict):
     global GLOBAL_VERBOSE
     global GLOBAL_TRADE_OBJECT
+    global GLOBAL_LEFT_HOUR
     current_time = GLOBAL_TRADE_OBJECT.get_current_time()
-    print('[{current_time}] {symbol} - SELL_THREAD START'.format(current_time=current_time, symbol=buy_dict['symbol']))
+    print('[{current_time}] {symbol} / sell_profit : {sell_profit} / sell_loss : {sell_loss} - SELL_THREAD START'.format(current_time=current_time, symbol=buy_dict['symbol'], sell_profit=buy_dict['sell_profit'], sell_loss=buy_dict['sell_loss']))
     while True:
         try:
             order_detail = GLOBAL_TRADE_OBJECT.get_order_detail(order_id=buy_dict['order_id'])
@@ -167,17 +188,30 @@ def sell_thread(buy_dict):
                 order_unit = "{:.4f}".format(symbol_balance)
             else:
                 raise ValueError("API Server has Error!")
-            
             if order_unit == "0.0000":
                 print('[{current_time}] {symbol} - ALREADY SELLED'.format(current_time=current_time, symbol=buy_dict['symbol']))
                 GLOBAL_SET.remove(buy_dict['symbol'])
                 break
-            
             order_price = float(order_detail['price'])
             current_price = float(GLOBAL_TRADE_OBJECT.get_coin_price(symbol=buy_dict['symbol']))
             profit_rate = (current_price - order_price) / order_price
-            if GLOBAL_VERBOSE:
-                print('[SELL_THREAD - {symbol}] [ ORDER_PRICE : {order_price} -> CURRENT_PRICE : {current_price} / profit_rate : {profit_rate} / sell_loss: {sell_loss}'.format(symbol=buy_dict['symbol'], order_price=order_price, current_price=current_price, profit_rate=profit_rate, sell_loss=buy_dict['sell_loss']))
+            
+            left_hour = (datetime.now() - current_time).seconds // 3600
+            if left_hour >= GLOBAL_LEFT_HOUR and profit_rate > 0.0:
+                lock.acquire()
+                print("[{symbol}] {left_hour} HOUR LEFT. SELL ANYWAY".format(symbol= buy_dict['symbol'], left_hour=GLOBAL_LEFT_HOUR))
+                execute_trade(buy_dict['symbol'], 'SELL', sell_unit=order_unit)
+                lock.release()
+            
+            # reset sell-loss https://www.youtube.com/watch?v=q-Jk-qD_EEI
+            if profit_rate / 0.001 > 0:
+                if profit_rate >= buy_dict['sell_profit']:
+                    buy_dict['sell_loss'] = buy_dict['sell_profit'] * 0.8
+                    buy_dict['sell_profit'] = buy_dict['sell_profit'] * 1.2
+                else:
+                    buy_dict['sell_loss'] = (profit_rate / 2.0) - 0.0005  # reset sell_loss
+                print("[SELL-THREAD ({symbol}]) RESET SELL-LOSS : {sell_loss}".format(symbol=buy_dict['symbol'], sell_loss=buy_dict['sell_loss']))
+                
             if profit_rate >= buy_dict['sell_profit'] or profit_rate <= buy_dict['sell_loss']:
                 lock.acquire()
                 if execute_trade(buy_dict['symbol'], 'SELL', sell_unit=order_unit):
@@ -204,12 +238,16 @@ GLOBAL_DEFAULT_SELL_LOSS = -0.015
 GLOBAL_DEFAULT_SELL_PROFIT = 0.025
 GLOBAL_SET = set()
 GLOBAL_VERBOSE = True
-GLOBAL_TRADE_STOCK_COUNT = 80
+GLOBAL_TRADE_STOCK_MINIMAL_RANK = 100
+GLOBAL_TRADE_STOCK_COUNT = 40
 GLOBAL_MAX_TRY_COUNT = 30
+GLOBAL_MAX_BUY_COUNT = 3
+GLOBAL_LEFT_HOUR = 18
 buy_rate = 0.5
 lock = threading.Lock()  # Create a lock object
 
 # Create the threads
+trade_strategy_list = []
 extra_column = ['sell_loss', 'sell_profit']
 
 
@@ -220,8 +258,29 @@ def _calc_sell_loss_profit(order_price, extra_data, sell_loss, sell_profit):
     return result
 
 
-extra_function = _calc_sell_loss_profit
-buy_routine = threading.Thread(target=buy_thread, args=(buy_rate, extra_column, extra_function))
+package1 = TradeStrategyPackage(strategy_function=ema_local_min_max_trandline_function,
+                                strategy_function_name='ema_local_min_max_trandline_function',
+                                extra_function=_calc_sell_loss_profit,
+                                extra_column=extra_column)
+
+package2 = TradeStrategyPackage(strategy_function=ema_swing_low_function,
+                                strategy_function_name='ema_swing_low_function',
+                                extra_function=_calc_sell_loss_profit,
+                                extra_column=extra_column)
+
+package3 = TradeStrategyPackage(strategy_function=ema_swing_low_function,
+                                strategy_function_name='ema_swing_low_function2',
+                                strategy_options={'ema_period':20, 'rate_threshold':0.01},
+                                extra_function=_calc_sell_loss_profit,
+                                extra_column=extra_column
+                                )
+
+trade_strategy_list.append(package1)
+trade_strategy_list.append(package2)
+trade_strategy_list.append(package3)
+
+# Create the threads
+buy_routine = threading.Thread(target=buy_thread, args=(buy_rate, trade_strategy_list))
 
 # Start the threads
 buy_routine.start()
