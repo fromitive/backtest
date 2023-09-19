@@ -19,9 +19,12 @@ class UpbitTrade(Trade):
     def get_trade_fee(self, symbol: str, payment_currency: str = 'KRW') -> float:
         return 0.0005
     
-    def get_coin_price(self, symbol: str, payment_currency: str = 'KRW') -> float:
+    def get_coin_price(self, symbol: str, payment_currency: str = 'KRW', bid_ask: str = 'bid', prior: int = 0) -> float:
         orderbooks = pyupbit.get_orderbook(ticker="{payment_currency}-{symbol}".format(payment_currency=payment_currency, symbol=symbol))
-        return orderbooks['orderbook_units'][0]['bid_price']
+        if bid_ask == 'bid':
+            return orderbooks['orderbook_units'][prior]['bid_price']
+        elif bid_ask == 'ask':
+            return orderbooks['orderbook_units'][prior]['ask_price']
 
     def trade(self, symbol: str, units: str, type: str, price: float, payment_currency: str = 'KRW') -> str:
         order_id = ''
