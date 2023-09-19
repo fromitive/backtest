@@ -72,18 +72,20 @@ class UpbitRepo:
             # response.headers['remaining-req']
             if response.status_code == 200:
                 if int(response.headers['remaining-req'].split('sec=')[1]) < 2:
-                    time.sleep(random.random())
+                    time.sleep(random.random()*10)
                 result_list = response.json()  # list
                 if result_list == []:
                     break
                 data_last_date = datetime.strptime(
                     result_list[-1]['candle_date_time_utc'], '%Y-%m-%dT%H:%M:%S')
-                if self.chart_intervals == '24h':
+                if self.chart_intervals:
                     data_last_date = data_last_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
 
                 if before_date != '' and data_last_date == before_date:
                     break
+            elif response.status_code == 400:
+                continue
             else:
                 raise Exception('request error', response.status_code)
             if self.from_date == '':
@@ -105,7 +107,7 @@ class UpbitRepo:
                         result_list[idx]['candle_date_time_utc'], '%Y-%m-%dT%H:%M:%S')
                     compare_date = compare_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
-                    if compare_date == self.from_date:
+                    if compare_date >= self.from_date:
                         result_list = result_list[:idx + 1]
                         flag = True
                         break
