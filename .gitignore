@@ -6,3 +6,6 @@ __pycache__
 *.csv
 !backtest/csvrepo/*.csv
 api-key.txt
+discord_url.txt
+discord_check.txt
+output-long.txt
