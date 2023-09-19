@@ -5,7 +5,4 @@ stockstats
 finance-datareader
 matplotlib
 bs4
-cufflinks
-ta
-ta-lib
 vectorbt
