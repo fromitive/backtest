@@ -26,4 +26,22 @@ pytest -svv
 
 # Usage
 
-Example for Usage in `tests` directory
+## basic useage
+Example for Usage in `tests` directory or `example.ipynb` file
+
+---
+
+## for alram and real-trading
+**WARNING** don't use real api-key, if you want loss your money. just refer the file as example.
+if you want to alram or trade real money using your strategy, you can refer  `cli-auto-trade.py` or `cli-discord-alram.py`
+
+---
+## the talib message
+
+maybe, if you run the any script of the above example code, you are occured following message in below.
+
+```
+[WARNING] could not import module talib trying next..
+```
+
+if you want using talib for executing strategy just install `ta-lib` moudle.
