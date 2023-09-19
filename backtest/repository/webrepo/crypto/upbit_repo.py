@@ -1,4 +1,5 @@
 import time
+import random
 from datetime import datetime, timedelta
 
 import requests
@@ -68,18 +69,23 @@ class UpbitRepo:
 
         while True:
             response = requests.get(request_url, headers=self.API_HEADERS)
+            # response.headers['remaining-req']
             if response.status_code == 200:
+                if int(response.headers['remaining-req'].split('sec=')[1]) < 2:
+                    time.sleep(random.random()*10)
                 result_list = response.json()  # list
                 if result_list == []:
                     break
                 data_last_date = datetime.strptime(
                     result_list[-1]['candle_date_time_utc'], '%Y-%m-%dT%H:%M:%S')
-                if self.chart_intervals == '24h':
+                if self.chart_intervals:
                     data_last_date = data_last_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
 
                 if before_date != '' and data_last_date == before_date:
                     break
+            elif response.status_code == 400:
+                continue
             else:
                 raise Exception('request error', response.status_code)
             if self.from_date == '':
@@ -101,7 +107,7 @@ class UpbitRepo:
                         result_list[idx]['candle_date_time_utc'], '%Y-%m-%dT%H:%M:%S')
                     compare_date = compare_date.replace(
                         hour=0, minute=0, second=0, microsecond=0)
-                    if compare_date == self.from_date:
+                    if compare_date >= self.from_date:
                         result_list = result_list[:idx + 1]
                         flag = True
                         break
@@ -115,7 +121,6 @@ class UpbitRepo:
                 raise Exception(
                     'date_convert error data_last_date: ', data_last_date)
             temp_list += result_list
-            time.sleep(0.3)
         temp_df = pd.DataFrame(temp_list, columns=[
             'candle_date_time_kst', 'opening_price', 'high_price', 'low_price', 'trade_price', 'candle_acc_trade_volume'])
 
