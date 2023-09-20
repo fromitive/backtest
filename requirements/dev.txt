@@ -1,3 +1,4 @@
 -r prod.txt
-flake8 #https://medium.com/@jackklpan/auto-format-and-lint-by-black-isort-flake8-in-vs-visual-studio-code-a62a3f5d940e
+black
+flake8
 jupyter
