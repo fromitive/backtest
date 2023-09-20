@@ -15,11 +15,10 @@ class SelectorResult:
 
     @classmethod
     def from_dict(cls, adict):
-        df = pd.DataFrame(adict,
-                          columns=[item for item in adict.keys()])
-        df.set_index('date', inplace=True)
+        df = pd.DataFrame(adict, columns=[item for item in adict.keys()])
+        df.set_index("date", inplace=True)
         df.index = pd.to_datetime(df.index)
-        df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
+        df.index = df.index.strftime("%Y-%m-%d %H:%M:%S")
         return cls(value=df)
 
     def __len__(self):

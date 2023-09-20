@@ -9,12 +9,14 @@ class PANDAS(CommonTALib):
         return series.ewm(span=timeperiod, adjust=False).mean()
 
     @staticmethod
-    def BBANDS(series: pd.Series, timeperiod: int, nbdevup: int, nbdevdn: int) -> (pd.Series, pd.Series, pd.Series):  # return upper, middle, lower band
+    def BBANDS(
+        series: pd.Series, timeperiod: int, nbdevup: int, nbdevdn: int
+    ) -> (pd.Series, pd.Series, pd.Series):  # return upper, middle, lower band
         middle_band = series.rolling(window=timeperiod).mean()
         std_deviation = series.rolling(window=timeperiod).std()
         upper_band = middle_band + (std_deviation * nbdevup)
         lower_band = middle_band + (std_deviation * nbdevdn)
-        
+
         return upper_band, middle_band, lower_band
 
     @staticmethod
@@ -32,7 +34,16 @@ class PANDAS(CommonTALib):
         return rsi
 
     @staticmethod
-    def STOCH(high_rsi, low_rsi, close_rsi, fastk_period: int = 14, slowk_period: int = 3, slowk_matype: int = 0, slowd_period: int = 3, slowd_matype: int = 0) -> (pd.Series, pd.Series):  # return fastk fastd
+    def STOCH(
+        high_rsi,
+        low_rsi,
+        close_rsi,
+        fastk_period: int = 14,
+        slowk_period: int = 3,
+        slowk_matype: int = 0,
+        slowd_period: int = 3,
+        slowd_matype: int = 0,
+    ) -> (pd.Series, pd.Series):  # return fastk fastd
         min_val = close_rsi.rolling(window=fastk_period, center=False).min()
         max_val = close_rsi.rolling(window=fastk_period, center=False).max()
 

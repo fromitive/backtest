@@ -5,24 +5,20 @@ from backtest.domains.stockdata import StockData
 from backtest.domains.strategy import Strategy
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def strategy_list():
     strategy1 = Strategy()
     strategy2 = Strategy()
     strategy3 = Strategy()
-    return [
-        strategy1, strategy2, strategy3
-    ]
+    return [strategy1, strategy2, strategy3]
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def stockdata_list():
     stockdata1 = StockData()
     stockdata2 = StockData()
     stockdata3 = StockData()
-    return [
-        stockdata1, stockdata2, stockdata3
-    ]
+    return [stockdata1, stockdata2, stockdata3]
 
 
 def test_init_backtest_with_parameters(strategy_list, stockdata_list):

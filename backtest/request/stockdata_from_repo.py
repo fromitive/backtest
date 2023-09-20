@@ -33,11 +33,32 @@ def _validate_date_format(date_text: str):
 
 
 def build_stock_data_from_repo_request(filters=None):
-    accepted_filters = ["order__eq", "payment__eq",
-                        "chart_interval__eq", "from__eq", "to__eq", "start_time__eq", "end_time__eq"]
-    accepted_chart_interval_filters = ['24h', '1d',
-                                       '30m', '1m', '3m', '5m', '10m', '15m', ' 30m', '60m', '240m', '1h', '6h', '12h']
-    accepted_payment_filters = ['KRW', 'USDT']
+    accepted_filters = [
+        "order__eq",
+        "payment__eq",
+        "chart_interval__eq",
+        "from__eq",
+        "to__eq",
+        "start_time__eq",
+        "end_time__eq",
+    ]
+    accepted_chart_interval_filters = [
+        "24h",
+        "1d",
+        "30m",
+        "1m",
+        "3m",
+        "5m",
+        "10m",
+        "15m",
+        " 30m",
+        "60m",
+        "240m",
+        "1h",
+        "6h",
+        "12h",
+    ]
+    accepted_payment_filters = ["KRW", "USDT"]
     invalid_req = StockDataFromRepoInvalidRequest()
 
     if filters is not None:
@@ -47,35 +68,23 @@ def build_stock_data_from_repo_request(filters=None):
 
         for key, value in filters.items():
             if key not in accepted_filters:
-                invalid_req.add_error(
-                    "filters", "Key {} cannot be used".format(key)
-                )
+                invalid_req.add_error("filters", "Key {} cannot be used".format(key))
 
-            if key == 'chart_interval__eq':
+            if key == "chart_interval__eq":
                 if value not in accepted_chart_interval_filters:
-                    invalid_req.add_error(
-                        "filters", "key {} - value {} cannot be used".format(
-                            key, value)
-                    )
+                    invalid_req.add_error("filters", "key {} - value {} cannot be used".format(key, value))
 
-            if key == 'payment__eq':
+            if key == "payment__eq":
                 if value not in accepted_payment_filters:
-                    invalid_req.add_error(
-                        "filters", "Key {} - value {} cannot be used".format(
-                            key, value)
-                    )
-            if key in ['from__eq', 'to__eq']:
+                    invalid_req.add_error("filters", "Key {} - value {} cannot be used".format(key, value))
+            if key in ["from__eq", "to__eq"]:
                 if not _validate_date_format(value):
                     invalid_req.add_error(
-                        "filters", "Key {} - value {} must formating (YYYY-MM-DD) e.g: 1990-01-02".format(
-                            key, value)
+                        "filters", "Key {} - value {} must formating (YYYY-MM-DD) e.g: 1990-01-02".format(key, value)
                     )
-                elif key == 'from__eq':
+                elif key == "from__eq":
                     if datetime.datetime.strptime(value, "%Y-%m-%d") > datetime.datetime.now():
-                        invalid_req.add_error(
-                            "filters", "Key {} - value not accepted future date".format(
-                                key)
-                        )
+                        invalid_req.add_error("filters", "Key {} - value not accepted future date".format(key))
 
         if invalid_req.has_errors():
             return invalid_req

@@ -1,6 +1,7 @@
 import dataclasses
 import typing
 
+
 @dataclasses.dataclass
 class TradeStrategyPackage:
     strategy_function: typing.Callable = None
@@ -12,7 +13,5 @@ class TradeStrategyPackage:
     max_observe_time_idx: int = -3
     market_timing: typing.List[int] = dataclasses.field(default_factory=list)
     message_function: typing.Callable = None
-    buy_bid_ask: str = 'bid'
+    buy_bid_ask: str = "bid"
     sell_prior: int = 4
-    
-

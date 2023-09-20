@@ -1,10 +1,13 @@
 from .common import CommonTALib
 
 
-class CreateModule():
+class CreateModule:
     @staticmethod
     def createCompatModule() -> CommonTALib:
-        module_list = [('backtest.module_compet.talib.talib', 'TALib'), ('backtest.module_compet.talib.pandas', 'PANDAS')]
+        module_list = [
+            ("backtest.module_compet.talib.talib", "TALib"),
+            ("backtest.module_compet.talib.pandas", "PANDAS"),
+        ]
         for module, class_name in module_list:
             try:
                 imported_module = __import__(module, fromlist=[class_name])

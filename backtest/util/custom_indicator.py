@@ -16,9 +16,9 @@ def twin_range_filter(data: pd.DataFrame) -> pd.DataFrame:
         smoothrng_result = avrng.ewm(span=wper, adjust=False).mean() * m
         return smoothrng_result
 
-    data['smrng1'] = smoothrng(data['close'], per1, mult1)
-    data['smrng2'] = smoothrng(data['close'], per2, mult2)
-    data['smrng'] = (data['smrng1'] + data['smrng2']) / 2
+    data["smrng1"] = smoothrng(data["close"], per1, mult1)
+    data["smrng2"] = smoothrng(data["close"], per2, mult2)
+    data["smrng"] = (data["smrng1"] + data["smrng2"]) / 2
 
     # Range Filter
     def rngfilt(x, r):
@@ -37,35 +37,39 @@ def twin_range_filter(data: pd.DataFrame) -> pd.DataFrame:
             else:
                 rngfilt.append(x_val + r_val)
         return pd.Series(rngfilt, index=x.index)
-    
-    data['filt'] = rngfilt(data['close'], data['smrng'])
-    
-    data['upward'] = 0.0
-    data['downward'] = 0.0
-    
+
+    data["filt"] = rngfilt(data["close"], data["smrng"])
+
+    data["upward"] = 0.0
+    data["downward"] = 0.0
+
     for i in range(1, len(data)):
-        if data['filt'].iat[i] > data['filt'].iat[i - 1]:
-            data['upward'].iat[i] = data['upward'].iat[i - 1] + 1
-        elif data['filt'].iat[i] < data['filt'].iat[i - 1]:
-            data['upward'].iat[i] = 0
-    
+        if data["filt"].iat[i] > data["filt"].iat[i - 1]:
+            data["upward"].iat[i] = data["upward"].iat[i - 1] + 1
+        elif data["filt"].iat[i] < data["filt"].iat[i - 1]:
+            data["upward"].iat[i] = 0
+
     for i in range(1, len(data)):
-        if data['filt'].iat[i] < data['filt'].iat[i - 1]:
-            data['downward'].iat[i] = data['downward'].iat[i - 1] + 1
-        elif data['filt'].iat[i] > data['filt'].iat[i - 1]:
-            data['downward'].iat[i] = 0
+        if data["filt"].iat[i] < data["filt"].iat[i - 1]:
+            data["downward"].iat[i] = data["downward"].iat[i - 1] + 1
+        elif data["filt"].iat[i] > data["filt"].iat[i - 1]:
+            data["downward"].iat[i] = 0
 
     # source > filt and source > source[1] and upward > 0
-    long_cond = (data['close'] > data['filt']) & (data['close'] > data['close'].shift(1)) & (data['upward'] > 0) | (data['close'] > data['filt']) & (data['close'] < data['close'].shift(1)) & (data['upward'] > 0)
-    short_cond = (data['close'] < data['filt']) & (data['close'] < data['close'].shift(1)) & (data['downward'] > 0) | (data['close'] < data['filt']) & (data['close'] > data['close'].shift(1)) & (data['downward'] > 0)
+    long_cond = (data["close"] > data["filt"]) & (data["close"] > data["close"].shift(1)) & (data["upward"] > 0) | (
+        data["close"] > data["filt"]
+    ) & (data["close"] < data["close"].shift(1)) & (data["upward"] > 0)
+    short_cond = (data["close"] < data["filt"]) & (data["close"] < data["close"].shift(1)) & (data["downward"] > 0) | (
+        data["close"] < data["filt"]
+    ) & (data["close"] > data["close"].shift(1)) & (data["downward"] > 0)
 
-    data['CondIni'] = np.where(long_cond, 1, np.where(short_cond, -1, np.NAN))
-    data['CondIni'].fillna(method='ffill', inplace=True)
-    
-    data['long'] = long_cond & (data['CondIni'].shift(1) == -1)
-    data['short'] = short_cond & (data['CondIni'].shift(1) == 1)
+    data["CondIni"] = np.where(long_cond, 1, np.where(short_cond, -1, np.NAN))
+    data["CondIni"].fillna(method="ffill", inplace=True)
 
-    return data[['long', 'short']]
+    data["long"] = long_cond & (data["CondIni"].shift(1) == -1)
+    data["short"] = short_cond & (data["CondIni"].shift(1) == 1)
+
+    return data[["long", "short"]]
 
 
 def trendilo(data: pd.DataFrame) -> pd.DataFrame:
@@ -80,14 +84,18 @@ def trendilo(data: pd.DataFrame) -> pd.DataFrame:
 
     def alma(series, window, offset, sigma):
         m = round(offset * (window - 1))
-        s = series.rolling(window).apply(lambda x: sum(np.exp(- (m - i) ** 2 / (2 * sigma * sigma)) * x[i] for i in range(window)) / sum(np.exp(-(m - i) ** 2 / (2 * sigma * sigma)) for i in range(window)), raw=True)
+        s = series.rolling(window).apply(
+            lambda x: sum(np.exp(-((m - i) ** 2) / (2 * sigma * sigma)) * x[i] for i in range(window))
+            / sum(np.exp(-((m - i) ** 2) / (2 * sigma * sigma)) for i in range(window)),
+            raw=True,
+        )
         return s
 
     # Logic for calculations
-    data['pch'] = data['close'].diff(smooth) / data['close'] * 100
-    data['avpch'] = alma(data['pch'], length, offset, sigma)
-    
+    data["pch"] = data["close"].diff(smooth) / data["close"] * 100
+    data["avpch"] = alma(data["pch"], length, offset, sigma)
+
     blength = blen if cblen else length
-    data['rms'] = bmult * np.sqrt((data['avpch']**2).rolling(blength).mean())
-    
-    return data[['avpch', 'rms']]
+    data["rms"] = bmult * np.sqrt((data["avpch"] ** 2).rolling(blength).mean())
+
+    return data[["avpch", "rms"]]

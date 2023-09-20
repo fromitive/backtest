@@ -3,7 +3,6 @@ from unittest import mock
 import pytest
 import json
 from backtest.domains.stockdata import StockData
-from backtest.module_compet.pandas import pd
 from backtest.repository.webrepo.crypto.bithumb_repo import BithumbRepo
 
 
@@ -17,7 +16,7 @@ bithumb_6h = '{"status":"0000","data":[[1577631600000,"8510000","8496000","86340
 bithumb_12h = '{"status":"0000","data":[[1469674800000,"755000","755000","757000","751000","1393.18789772"],[1469718000000,"754000","751000","755000","750000","633.63842646"],[1469761200000,"752000","750000","753000","747000","1522.66945909"],[1469804400000,"751000","749000","753000","748000","610.03369078"]]}'
 
 
-@pytest.fixture(scope='function')
+@pytest.fixture(scope="function")
 def mocked_requests_get(request):
     class MockResponse:
         def __init__(self, json_data, status_code):
@@ -30,13 +29,14 @@ def mocked_requests_get(request):
     return MockResponse(json.loads(request.param), 200)
 
 
-@pytest.mark.parametrize('mocked_requests_get', [bithumb_1m, bithumb_3m, bithumb_5m, bithumb_10m, bithumb_1h, bithumb_12h], indirect=True)
-@mock.patch('requests.get')
+@pytest.mark.parametrize(
+    "mocked_requests_get", [bithumb_1m, bithumb_3m, bithumb_5m, bithumb_10m, bithumb_1h, bithumb_12h], indirect=True
+)
+@mock.patch("requests.get")
 def test_bithumb_repo_without_paramemters(mock_response_get, mocked_requests_get):
     mock_response_get.return_value = mocked_requests_get
     bithumb_repo = BithumbRepo()
     response = bithumb_repo.get(filters={})
     assert isinstance(response, StockData)
     # assert isinstance(response.data.index, pd.DatetimeIndex)
-    assert list(response.data.columns) == [
-        'open', 'high', 'low', 'close', 'volume']
+    assert list(response.data.columns) == ["open", "high", "low", "close", "volume"]

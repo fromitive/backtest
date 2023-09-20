@@ -11,10 +11,10 @@ class StrategyExecuteFlagType(Enum):
 
 @dataclasses.dataclass
 class Strategy:
-    name: str = ''
+    name: str = ""
     function: typing.Callable = None
     weight: int = 0
-    target: str = 'ALL'
+    target: str = "ALL"
     after: bool = False
     flag: StrategyExecuteFlagType = StrategyExecuteFlagType.NORMAL
     inverse: bool = False
