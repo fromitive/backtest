@@ -6,3 +6,5 @@ finance-datareader
 matplotlib
 bs4
 vectorbt
+pyupbit
+pybithumb

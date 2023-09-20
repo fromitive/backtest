@@ -1,3 +1,8 @@
+# requirements
+
+python 3.10 required.. (because vectorbt module needed) **TODO**
+
+
 # installation
 
 ```

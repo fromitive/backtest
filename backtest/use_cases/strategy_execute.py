@@ -6,7 +6,6 @@ from backtest.domains.backtest_plot_package import BacktestPlotPackage
 from backtest.domains.strategy_result import StrategyResult, StrategyResultColumnType
 from backtest.module_compet.pandas import pd
 from backtest.response import ResponseFailure, ResponseSuccess, ResponseTypes
-from ta.momentum import RSIIndicator
 from backtest.util.custom_indicator import trendilo, twin_range_filter
 from scipy.stats import linregress
 import copy
@@ -1381,9 +1380,8 @@ def sma_multi_big_stock_function(
 
 
 def _calculate_rsi(data, period):
-    rsi = RSIIndicator(close=data.data["close"], window=period)
-
-    return rsi.rsi()
+    rsi = talib.RSI(data.data["close"], period)
+    return rsi
 
 
 def rsi_function(
