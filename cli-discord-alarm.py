@@ -214,7 +214,7 @@ def buy_thread(trade_strategy_list: List[TradeStrategyPackage] = []):
                             kwargs={"extra_data": extra_data},
                         )
                         trade_routine.start()
-                        sent_symbol_set.add(symbol)
+
         except Exception as e:
             print("[BUY-THREAD CRITICAL] EXCEPTION!! {}".format(e))
             if lock.locked():
