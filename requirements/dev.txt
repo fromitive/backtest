@@ -1,4 +1,5 @@
 -r prod.txt
 black
 flake8
+pylint
 jupyter
