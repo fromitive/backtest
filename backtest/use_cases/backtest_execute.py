@@ -31,7 +31,7 @@ def _init_backtest_result(column_name_and_type: dict, base_index: pd.Index):
             backtest_result_raw[column_name] = 0.0
         elif column_name_and_type[column_name] == "object":
             backtest_result_raw[column_name] = np.nan
-            backtest_result_raw[column_name].astype("object")
+            backtest_result_raw[column_name] = backtest_result_raw[column_name].astype("object")
             backtest_result_raw.at[backtest_result_raw.index[0], column_name] = "DUMMY"
     return backtest_result_raw
 
