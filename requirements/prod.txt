@@ -9,3 +9,6 @@ vectorbt
 pyupbit
 pybithumb
 discord_webhook
+plotly
+nbformat
+ipykernel
