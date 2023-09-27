@@ -51,7 +51,7 @@ def build_stock_data_from_repo_request(filters=None):
         "5m",
         "10m",
         "15m",
-        " 30m",
+        "30m",
         "60m",
         "240m",
         "1h",
